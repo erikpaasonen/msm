@@ -17,26 +17,27 @@ const cronTemplate = `#
 # For more information visit: https://github.com/msmhq/msm
 #
 
-# Backs up all worlds for all servers at {{ .MaintenanceHour }}:02
-02    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   {{ .MSMBinary }} worlds backup --all
+# Rolls the logs for all servers at {{ .LogrollHour }}:50
+50    {{ printf "%02d" .LogrollHour }}  *   *   *   {{ .Username }}   {{ .MSMBinary }} logroll --all
 
-# Rolls the logs for all servers at {{ .LogrollHour }}:55
-55    {{ printf "%02d" .LogrollHour }}  *   *   *   {{ .Username }}   {{ .MSMBinary }} logroll --all
+# Backs up all worlds for all servers at {{ .MaintenanceHour }}:00
+00    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   {{ .MSMBinary }} worlds backup --all
 
 # Start any crashed servers each hour
 @hourly               {{ .Username }}   {{ .MSMBinary }} start
 
+# Archive cleanup tasks (spaced 5 minutes apart, starting 30 min after backup)
 # Deletes all server log files older than {{ .RetentionDays }} days
-10    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .ServerStoragePath }}/*/logs -maxdepth 1 -mtime +{{ .RetentionDays }} -type f -name "*.log.gz" | xargs rm --force
+30    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .ServerStoragePath }}/*/logs -maxdepth 1 -mtime +{{ .RetentionDays }} -type f -name "*.log.gz" | xargs rm --force
 
 # Deletes all server backup files older than {{ .RetentionDays }} days
-12    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .BackupArchivePath }} -maxdepth 2 -mtime +{{ .RetentionDays }} -type f -name "*.zip" | xargs rm --force
+35    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .BackupArchivePath }} -maxdepth 2 -mtime +{{ .RetentionDays }} -type f -name "*.zip" | xargs rm --force
 
 # Deletes all msm log files older than {{ .RetentionDays }} days
-14    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .LogArchivePath }} -maxdepth 2 -mtime +{{ .RetentionDays }} -type f -name "*.log.gz" | xargs rm --force
+40    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .LogArchivePath }} -maxdepth 2 -mtime +{{ .RetentionDays }} -type f -name "*.log.gz" | xargs rm --force
 
 # Deletes all server world backup files older than {{ .RetentionDays }} days
-16    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .WorldArchivePath }} -maxdepth 3 -mtime +{{ .RetentionDays }} -type f -name "*.zip" | xargs rm --force
+45    {{ printf "%02d" .MaintenanceHour }}  *   *   *   {{ .Username }}   find {{ .WorldArchivePath }} -maxdepth 3 -mtime +{{ .RetentionDays }} -type f -name "*.zip" | xargs rm --force
 `
 
 type cronData struct {
