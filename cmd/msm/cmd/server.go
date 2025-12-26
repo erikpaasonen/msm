@@ -28,7 +28,11 @@ var serverListCmd = &cobra.Command{
 
 		for _, s := range servers {
 			status := s.Status()
-			fmt.Printf("%s (%s)\n", s.Name, status)
+			if port := s.Port(); port > 0 {
+				fmt.Printf("%s (%s, port %d)\n", s.Name, status, port)
+			} else {
+				fmt.Printf("%s (%s)\n", s.Name, status)
+			}
 		}
 		return nil
 	},
@@ -146,7 +150,12 @@ func serverAction(action string) func(*cobra.Command, []string) error {
 			fmt.Printf("Restarted server %q\n", name)
 
 		case "status":
-			fmt.Printf("Server %q is %s\n", name, s.Status())
+			status := s.Status()
+			if port := s.Port(); port > 0 {
+				fmt.Printf("Server %q is %s (port %d)\n", name, status, port)
+			} else {
+				fmt.Printf("Server %q is %s\n", name, status)
+			}
 
 		case "console":
 			return s.Console()
