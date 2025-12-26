@@ -440,11 +440,11 @@ RAM="512"
 				Expect(os.MkdirAll(ramWorldPath, 0755)).To(Succeed())
 			})
 
-			It("sets up symlink from world directory to RAM path", func() {
+			It("sets up symlink at server root to RAM path", func() {
 				err := s.SetupRAMWorlds()
 				Expect(err).NotTo(HaveOccurred())
 
-				symlinkPath := filepath.Join(serverPath, "worldstorage", "world")
+				symlinkPath := filepath.Join(serverPath, "world")
 				linkTarget, err := os.Readlink(symlinkPath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(linkTarget).To(Equal(filepath.Join(ramdiskPath, "survival", "world")))

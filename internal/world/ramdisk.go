@@ -107,26 +107,26 @@ func (w *World) SetupRAMSymlink(worldStoragePath string) error {
 		return fmt.Errorf("failed to update allowed_symlinks.txt: %w", err)
 	}
 
-	serverWorldPath := worldStoragePath
-	if !filepath.IsAbs(worldStoragePath) {
-		serverWorldPath = filepath.Join(w.ServerPath, worldStoragePath)
-	}
-
-	symlinkPath := filepath.Join(serverWorldPath, w.Name)
+	symlinkPath := filepath.Join(w.ServerPath, w.Name)
 
 	linkTarget, err := os.Readlink(symlinkPath)
 	if err == nil && linkTarget == w.RAMPath {
 		return nil
 	}
 
-	if _, err := os.Lstat(symlinkPath); err == nil {
-		if err := os.RemoveAll(symlinkPath); err != nil {
-			return fmt.Errorf("failed to remove existing world directory: %w", err)
+	info, err := os.Lstat(symlinkPath)
+	if err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			if err := os.Remove(symlinkPath); err != nil {
+				return fmt.Errorf("failed to remove existing symlink: %w", err)
+			}
+		} else if info.IsDir() {
+			return fmt.Errorf("world directory exists at %s - expected symlink to worldstorage", symlinkPath)
 		}
 	}
 
 	if err := os.Symlink(w.RAMPath, symlinkPath); err != nil {
-		return fmt.Errorf("failed to create symlink: %w", err)
+		return fmt.Errorf("failed to create RAM symlink: %w", err)
 	}
 
 	return nil

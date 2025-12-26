@@ -393,7 +393,7 @@ var _ = Describe("World", func() {
 			Expect(os.MkdirAll(ramPath, 0755)).To(Succeed())
 			Expect(os.WriteFile(filepath.Join(ramPath, "level.dat"), []byte("data"), 0644)).To(Succeed())
 
-			symlinkPath = filepath.Join(serverPath, "worldstorage", "world")
+			symlinkPath = filepath.Join(serverPath, "world")
 		})
 
 		Context("when world is in RAM", func() {
@@ -401,7 +401,7 @@ var _ = Describe("World", func() {
 				Expect(os.WriteFile(filepath.Join(worldPath, "in_ram"), []byte{}, 0644)).To(Succeed())
 			})
 
-			It("replaces world directory with symlink to RAM path", func() {
+			It("creates symlink at server root to RAM path", func() {
 				w, err := world.Get(serverPath, "survival", "world", "worldstorage", "worldstorage_inactive", globalCfg)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(w.InRAM).To(BeTrue())
@@ -439,9 +439,8 @@ var _ = Describe("World", func() {
 				err = w.SetupRAMSymlink("worldstorage")
 				Expect(err).NotTo(HaveOccurred())
 
-				info, err := os.Lstat(symlinkPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(info.Mode() & os.ModeSymlink).To(BeZero())
+				_, err = os.Lstat(symlinkPath)
+				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 		})
 
@@ -458,9 +457,8 @@ var _ = Describe("World", func() {
 				err = w.SetupRAMSymlink("worldstorage")
 				Expect(err).NotTo(HaveOccurred())
 
-				info, err := os.Lstat(symlinkPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(info.Mode() & os.ModeSymlink).To(BeZero())
+				_, err = os.Lstat(symlinkPath)
+				Expect(os.IsNotExist(err)).To(BeTrue())
 			})
 		})
 	})
