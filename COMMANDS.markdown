@@ -1,0 +1,165 @@
+# MSM Command Reference
+
+Complete reference for all MSM commands.
+
+## Global Commands
+
+Commands that operate on all servers or the MSM system itself.
+
+| Command | Description |
+|---------|-------------|
+| `msm start` | Start all servers |
+| `msm stop [--now]` | Stop all servers (--now skips player warning) |
+| `msm restart [--now]` | Restart all servers |
+| `msm config` | Display global configuration |
+| `msm version` | Print version number |
+| `msm cron generate` | Output cron file to stdout |
+| `msm cron install` | Install cron file to /etc/cron.d/msm |
+| `msm logroll [--all]` | Archive and compress server logs |
+
+## Server Management
+
+### Listing and Creating
+
+| Command | Description |
+|---------|-------------|
+| `msm server list` | List all servers with status |
+| `msm server create <name>` | Create a new server |
+| `msm server delete <name>` | Delete a server (must be stopped) |
+| `msm server rename <old> <new>` | Rename a server |
+
+### Lifecycle
+
+| Command | Description |
+|---------|-------------|
+| `msm start <server>` | Start a server |
+| `msm stop <server> [--now]` | Stop a server |
+| `msm restart <server> [--now]` | Restart a server |
+| `msm status <server>` | Show server status |
+
+### Console and Commands
+
+| Command | Description |
+|---------|-------------|
+| `msm console <server>` | Attach to server console (Ctrl+A, D to detach) |
+| `msm cmd <server> <command>` | Send command to server console |
+| `msm say <server> <message>` | Broadcast message to all players |
+| `msm kick <server> <player> [reason]` | Kick a player |
+
+## World Management
+
+| Command | Description |
+|---------|-------------|
+| `msm worlds list <server>` | List all worlds for a server |
+| `msm worlds on <server> <world>` | Activate a world |
+| `msm worlds off <server> <world>` | Deactivate a world |
+| `msm worlds ram <server> <world>` | Toggle RAM disk state for a world |
+| `msm worlds todisk [server]` | Sync RAM worlds to disk |
+| `msm worlds todisk --all` | Sync all RAM worlds (all servers) |
+| `msm worlds backup [server]` | Backup all worlds for a server |
+| `msm worlds backup --all` | Backup all worlds (all servers) |
+
+## Backups
+
+| Command | Description |
+|---------|-------------|
+| `msm worlds backup <server>` | Backup all worlds for a server |
+| `msm worlds backup --all` | Backup all worlds (all servers) |
+| `msm backup <server>` | Full server backup (worlds + configs) |
+
+## Player Management
+
+### Allowlist (Whitelist)
+
+| Command | Description |
+|---------|-------------|
+| `msm allowlist on <server>` | Enable allowlist enforcement |
+| `msm allowlist off <server>` | Disable allowlist enforcement |
+| `msm allowlist add <server> <player>...` | Add player(s) to allowlist |
+| `msm allowlist remove <server> <player>...` | Remove player(s) from allowlist |
+| `msm allowlist list <server>` | List all allowlisted players |
+
+### Operators
+
+| Command | Description |
+|---------|-------------|
+| `msm op <server> <player>` | Make player an operator |
+| `msm deop <server> <player>` | Remove operator status |
+
+### Blocklist (Bans)
+
+| Command | Description |
+|---------|-------------|
+| `msm blocklist player add <server> <player>... [--reason "..."]` | Ban player(s) |
+| `msm blocklist player remove <server> <player>...` | Unban player(s) |
+| `msm blocklist player list <server>` | List banned players |
+| `msm blocklist ip add <server> <ip>... [--reason "..."]` | Ban IP address(es) |
+| `msm blocklist ip remove <server> <ip>...` | Unban IP address(es) |
+| `msm blocklist ip list <server>` | List banned IPs |
+
+## Jar Group Management
+
+Jar groups organize server JAR files for easy version management.
+
+| Command | Description |
+|---------|-------------|
+| `msm jargroup list` | List all jar groups |
+| `msm jargroup create <name> <url>` | Create a jar group with download URL |
+| `msm jargroup delete <name>` | Delete a jar group |
+| `msm jargroup rename <old> <new>` | Rename a jar group |
+| `msm jargroup changeurl <name> <url>` | Change the download URL |
+| `msm jargroup getlatest <name>` | Download latest JAR from URL |
+
+### Linking Servers to Jars
+
+| Command | Description |
+|---------|-------------|
+| `msm jar <server> <jargroup>` | Link server to latest jar in group |
+| `msm jar <server> <jargroup> <file>` | Link server to specific jar file |
+| `msm jar <server> <jargroup> --force` | Force link (bypasses Fabric check) |
+
+## Fabric Mod Loader
+
+Commands for managing Fabric mod loader integration.
+
+| Command | Description |
+|---------|-------------|
+| `msm fabric status <server>` | Show Fabric status and versions |
+| `msm fabric on <server>` | Enable Fabric for server |
+| `msm fabric off <server>` | Disable Fabric for server |
+| `msm fabric versions` | List supported Minecraft versions |
+| `msm fabric versions <mc-version>` | List loader versions for MC version |
+| `msm fabric update <server>` | Check for and download newer loader |
+| `msm fabric set-loader <server> <version>` | Pin specific loader version |
+| `msm fabric set-installer <server> <version>` | Pin specific installer version |
+
+## Global Flags
+
+These flags work with any command:
+
+| Flag | Description |
+|------|-------------|
+| `--config <path>` | Use alternate config file |
+| `-v, --verbose` | Enable debug logging |
+| `-h, --help` | Show help for command |
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `MSM_CONF` | Path to config file (default: /etc/msm.conf) |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 64 | Invalid user |
+| 65 | Invalid command |
+| 66 | Invalid argument |
+| 67 | Server stopped (when running command expected) |
+| 68 | Server running (when stopped expected) |
+| 69 | Name not found |
+| 70 | File not found |
+| 71 | Duplicate name |

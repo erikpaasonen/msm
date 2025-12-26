@@ -4,11 +4,90 @@ A command-line tool for managing multiple Minecraft servers on a single machine.
 
 **MSM v0.12.0** is a complete rewrite in Go, replacing the original bash init script with a modern, type-safe CLI.
 
+## Requirements
+
+### Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Linux | Full support | Primary target platform |
+| macOS | Full support | Requires GNU screen (`brew install screen`) |
+| Windows | WSL only | Native Windows not supported |
+
+MSM requires a Unix-like environment due to its reliance on GNU screen for process management, POSIX filesystem semantics, and `/dev/shm` for RAM disk features.
+
+### Dependencies
+
+| Dependency | Required | Purpose |
+|------------|----------|---------|
+| Go 1.21+ | Build only | Not needed if using pre-built binary |
+| GNU screen | Yes | Console and process management |
+| rsync | Optional | rsync backups, RAM disk sync |
+| rdiff-backup | Optional | Incremental backups with rotation |
+
+### Minecraft Version Support
+
+MSM supports **Minecraft 1.7.0 and later** (Java Edition), including the new year-based versioning scheme (e.g., `26.1`, `26.2`). Servers running Minecraft 1.6.x or earlier are not supported.
+
+## Quick Start
+
+```bash
+# 1. Install MSM (see Installation section for details)
+make build && sudo make install
+
+# 2. Create a server
+msm server create survival
+
+# 3. Set up a jar group and download the server jar
+msm jargroup create minecraft https://piston-data.mojang.com/v1/objects/.../server.jar
+msm jargroup getlatest minecraft
+
+# 4. Link the server to the jar
+msm jar survival minecraft
+
+# 5. Start the server
+msm start survival
+
+# 6. Attach to console (detach with Ctrl+A, D)
+msm console survival
+```
+
 ## Installation
+
+### Prerequisites
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt update
+sudo apt install golang-go screen rsync
+```
+
+**Linux (RHEL/Fedora):**
+```bash
+sudo dnf install golang screen rsync
+```
+
+**macOS:**
+```bash
+brew install go screen rsync
+```
+
+### System Setup
+
+Create the minecraft user and directory structure:
+
+```bash
+# Create system user
+sudo adduser --system --home /opt/msm --shell /bin/bash minecraft
+
+# Create directory structure
+sudo mkdir -p /opt/msm/{servers,jars,versioning,archives/{worlds,logs,backups},fabric}
+sudo chown -R minecraft:nogroup /opt/msm
+```
 
 ### From Source (Recommended)
 
-Requires Go 1.21 or later. This method installs the binary, default config, and cron job automatically.
+Building from source is recommended because `make install` handles everything automatically:
 
 ```bash
 git clone https://github.com/msmhq/msm.git
@@ -17,26 +96,191 @@ make build
 sudo make install
 ```
 
+This installs:
+- Binary to `/usr/local/bin/msm`
+- Default config to `/etc/msm.conf` (if not present)
+- Cron job to `/etc/cron.d/msm`
+
 ### Pre-built Binaries
 
-Download the latest release for your platform from the [releases page](https://github.com/msmhq/msm/releases).
+Download from the [releases page](https://github.com/msmhq/msm/releases).
+
+**Note:** Pre-built binaries require manual setup of the config file and cron job:
 
 ```bash
 # Linux (amd64)
 sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o /usr/local/bin/msm
 sudo chmod +x /usr/local/bin/msm
 
-# macOS (arm64)
-sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-darwin-arm64 -o /usr/local/bin/msm
-sudo chmod +x /usr/local/bin/msm
-
-# Install default config and cron job
+# Manual steps required with pre-built binary:
+sudo curl -L https://raw.githubusercontent.com/msmhq/msm/main/msm.conf -o /etc/msm.conf
 sudo msm cron install
 ```
 
-### Shell Completion
+### Systemd Integration (Optional)
 
-MSM supports shell completion for bash, zsh, and fish:
+To auto-start servers on boot:
+
+```bash
+sudo cp init/msm.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable msm
+```
+
+### Verify Installation
+
+```bash
+msm version
+msm config
+```
+
+## Features
+
+- **Multi-server management** - Run multiple Minecraft servers from one machine
+- **Server lifecycle** - Start, stop, restart with configurable delays and player warnings
+- **World backups** - Zip, rsync, or rdiff-backup with automatic rotation
+- **RAM disk support** - Load worlds into RAM for reduced lag
+- **Jar management** - Organize jars into groups, link servers to specific versions
+- **Fabric mod loader** - Native support for Fabric with version compatibility checks
+- **Player management** - Allowlist, operators, bans (players and IPs)
+- **Log rolling** - Automatic log compression and archival
+- **Console access** - Direct access to server console via screen
+
+## Configuration
+
+MSM reads its configuration from `/etc/msm.conf`. Override with `--config` flag or `MSM_CONF` environment variable.
+
+### Key Settings
+
+```bash
+# User to run servers as
+USERNAME="minecraft"
+
+# Storage paths
+SERVER_STORAGE_PATH="/opt/msm/servers"
+JAR_STORAGE_PATH="/opt/msm/jars"
+
+# Server defaults
+DEFAULT_RAM="1024"
+DEFAULT_STOP_DELAY="10"
+
+# Cron schedule
+CRON_MAINTENANCE_HOUR="5"
+CRON_ARCHIVE_RETENTION_DAYS="30"
+```
+
+### Per-Server Configuration
+
+Each server can override defaults in `<server>/server.conf`:
+
+```bash
+USERNAME="minecraft"
+RAM="2048"
+JAR_PATH="paper.jar"
+STOP_DELAY="30"
+```
+
+## Common Commands
+
+### Server Lifecycle
+
+```bash
+msm start                    # Start all servers
+msm stop [--now]             # Stop all servers
+msm start <server>           # Start specific server
+msm stop <server> [--now]    # Stop specific server
+msm restart <server>         # Restart server
+msm status <server>          # Check if running
+msm console <server>         # Attach to console
+msm cmd <server> "command"   # Send console command
+```
+
+### Backups
+
+```bash
+msm worlds backup --all      # Backup all worlds (all servers)
+msm worlds backup <server>   # Backup worlds for one server
+msm backup <server>          # Full server backup (includes configs)
+```
+
+### Player Management
+
+```bash
+msm allowlist add <server> <player>
+msm allowlist remove <server> <player>
+msm op <server> <player>
+msm kick <server> <player> [reason]
+```
+
+### Jar Management
+
+```bash
+msm jargroup list
+msm jargroup create <name> <url>
+msm jargroup getlatest <name>
+msm jar <server> <jargroup>
+```
+
+## RAM Disk Support
+
+Load worlds into RAM (`/dev/shm`) for reduced I/O latency:
+
+```bash
+# Enable RAM for a world
+msm worlds ram survival world
+
+# Start server (auto-creates symlink to RAM)
+msm start survival
+
+# Force sync to disk
+msm worlds todisk survival
+```
+
+A background sync daemon automatically syncs RAM to disk every 10 minutes while servers are running.
+
+**Warning:** In case of unexpected shutdown, you may lose up to 10 minutes of changes.
+
+## Fabric Mod Loader
+
+MSM natively supports [Fabric](https://fabricmc.net/):
+
+```bash
+# Enable Fabric
+msm fabric on survival
+
+# Start server (auto-downloads Fabric launcher)
+msm start survival
+
+# Check status
+msm fabric status survival
+
+# List available versions
+msm fabric versions 1.21.4
+```
+
+When Fabric is enabled, MSM prevents upgrading to Minecraft versions that Fabric doesn't support:
+
+```bash
+$ msm jar survival minecraft-26.1
+Error: fabric does not yet support minecraft 26.1 - upgrade blocked
+  Hint: Use --force to override
+```
+
+### Fabric Configuration
+
+Add to `<server>/server.conf`:
+
+```bash
+FABRIC_ENABLED="true"
+FABRIC_LOADER_VERSION="0.16.10"      # Optional: pin specific loader
+FABRIC_INSTALLER_VERSION="1.1.0"     # Optional: pin specific installer
+```
+
+## Full Command Reference
+
+See [COMMANDS.markdown](COMMANDS.markdown) for the complete command reference, including all flags, environment variables, and exit codes.
+
+## Shell Completion
 
 ```bash
 # Bash
@@ -64,17 +308,18 @@ The Go rewrite maintains full compatibility with existing MSM configurations.
 - Single static binary (no bash dependencies)
 - Structured logging with `-v/--verbose` flag
 - Faster startup and execution
+- Automatic RAM sync daemon (no cron required)
 
 ### Migration steps:
 
-1. **Backup your configuration:**
-   ```bash
-   cp /etc/msm.conf /etc/msm.conf.backup
-   ```
-
-2. **Stop all servers:**
+1. **Stop all servers:**
    ```bash
    msm stop --now
+   ```
+
+2. **Backup your configuration:**
+   ```bash
+   cp /etc/msm.conf /etc/msm.conf.backup
    ```
 
 3. **Clone and build:**
@@ -84,25 +329,20 @@ The Go rewrite maintains full compatibility with existing MSM configurations.
    make build
    ```
 
-4. **Remove old bash MSM remnants:**
+4. **Remove old bash MSM:**
    ```bash
    sudo make migrate
    ```
-   This removes `/etc/init.d/msm` and related init.d symlinks.
 
-5. **Install the new binary:**
+5. **Install:**
    ```bash
    sudo make install
    ```
 
-6. **Verify configuration:**
+6. **Verify and start:**
    ```bash
    msm config
    msm server list
-   ```
-
-7. **Start your servers:**
-   ```bash
    msm start
    ```
 
@@ -110,320 +350,6 @@ The Go rewrite maintains full compatibility with existing MSM configurations.
 - `whitelist` commands are now `allowlist`
 - `blacklist` commands are now `blocklist`
 - The underlying Minecraft files remain unchanged
-
-## Quick Start
-
-### Create a new server
-
-```bash
-# Create server directory structure
-msm server create survival
-
-# Set up a jar group and download the server jar
-msm jargroup create minecraft https://piston-data.mojang.com/v1/objects/.../server.jar
-msm jargroup getlatest minecraft
-
-# Link the server to the jar
-msm jar survival minecraft
-```
-
-### Basic operations
-
-```bash
-# Start/stop/restart
-msm start survival
-msm stop survival
-msm restart survival
-
-# Check status
-msm status survival
-
-# Attach to console (detach with Ctrl+A, D)
-msm console survival
-
-# Send a command
-msm cmd survival "say Hello everyone!"
-```
-
-## Features
-
-- **Multi-server management:** Run multiple Minecraft servers from one machine
-- **Server lifecycle:** Start, stop, restart with configurable delays and player warnings
-- **World backups:** Zip, rsync, or rdiff-backup with rotation
-- **RAM disk support:** Load worlds into RAM for reduced lag (see below)
-- **Jar management:** Organize jars into groups, auto-download updates
-- **Player management:** Allowlist, operators, bans (players and IPs)
-- **Log rolling:** Automatic log compression and archival
-- **Console access:** Direct access to server console via screen
-
-## RAM Disk Support
-
-MSM can load Minecraft worlds into RAM (`/dev/shm`) for significantly reduced I/O latency. This is especially useful for servers with high player counts or complex redstone.
-
-### How it works
-
-1. **Enable RAM for a world:**
-   ```bash
-   msm worlds ram survival world
-   ```
-   This copies the world to `/dev/shm/msm/survival/world` and sets an `in_ram` flag.
-
-2. **Start the server:**
-   ```bash
-   msm start survival
-   ```
-   MSM automatically creates a symlink from the world directory to the RAM copy, so Minecraft reads/writes directly to RAM.
-
-3. **Automatic sync daemon:**
-   When a server with RAM worlds starts, MSM spawns a background sync daemon (`msm-sync` screen session) that syncs RAM back to disk every 10 minutes. This runs automatically — no cron job required.
-
-4. **On server stop:**
-   When the last server stops, the sync daemon automatically terminates.
-
-### Viewing active sessions
-
-```bash
-$ screen -ls
-There are screens on:
-    12345.msm-survival    (Detached)
-    12346.msm-sync        (Detached)
-```
-
-### Manual sync
-
-To force an immediate sync:
-```bash
-msm worlds todisk survival    # Single server
-msm worlds todisk --all       # All running servers
-```
-
-### Data loss window
-
-In the event of unexpected shutdown (power loss, kernel panic), you may lose up to 10 minutes of world changes. The sync interval is not currently configurable but can be changed by modifying `SyncIntervalSecs` in `internal/server/sync.go`.
-
-### Differences from bash MSM
-
-The original bash MSM required a cron job (`/etc/cron.d/msm`) for periodic syncing. The Go rewrite manages this automatically via the `msm-sync` screen session, eliminating the need for system-level cron configuration.
-
-## Command Reference
-
-### Global Commands
-
-| Command | Description |
-|---------|-------------|
-| `msm start` | Start all servers |
-| `msm stop [--now]` | Stop all servers |
-| `msm restart [--now]` | Restart all servers |
-| `msm config` | Display global configuration |
-| `msm version` | Print version number |
-| `msm cron generate` | Output cron file based on config |
-| `msm cron install` | Install cron file to /etc/cron.d/msm |
-| `msm logroll [--all]` | Archive server logs |
-
-### Server Commands
-
-| Command | Description |
-|---------|-------------|
-| `msm server list` | List all servers |
-| `msm server create <name>` | Create a new server |
-| `msm server delete <name>` | Delete a server |
-| `msm server rename <old> <new>` | Rename a server |
-| `msm start <server>` | Start a server |
-| `msm stop <server> [--now]` | Stop a server |
-| `msm restart <server> [--now]` | Restart a server |
-| `msm status <server>` | Show server status |
-| `msm console <server>` | Attach to server console |
-| `msm cmd <server> <command>` | Send command to console |
-| `msm say <server> <message>` | Broadcast message |
-| `msm kick <server> <player> [reason]` | Kick a player |
-| `msm config <server> [key] [value]` | Show/set server config |
-| `msm backup <server>` | Full server backup |
-
-### World Commands
-
-| Command | Description |
-|---------|-------------|
-| `msm worlds list <server>` | List all worlds |
-| `msm worlds on <server> <world>` | Activate a world |
-| `msm worlds off <server> <world>` | Deactivate a world |
-| `msm worlds ram <server> <world>` | Toggle RAM disk state |
-| `msm worlds todisk [server] [--all]` | Sync RAM worlds to disk |
-| `msm worlds backup [server] [--all]` | Backup all worlds |
-
-### Player Commands
-
-| Command | Description |
-|---------|-------------|
-| `msm allowlist on <server>` | Enable allowlist |
-| `msm allowlist off <server>` | Disable allowlist |
-| `msm allowlist add <server> <player>...` | Add to allowlist |
-| `msm allowlist remove <server> <player>...` | Remove from allowlist |
-| `msm allowlist list <server>` | List allowlist |
-| `msm op <server> <player>` | Make player an operator |
-| `msm deop <server> <player>` | Remove operator status |
-| `msm blocklist player add <server> <player>... [--reason]` | Ban players |
-| `msm blocklist player remove <server> <player>...` | Unban players |
-| `msm blocklist player list <server>` | List banned players |
-| `msm blocklist ip add <server> <ip>... [--reason]` | Ban IPs |
-| `msm blocklist ip remove <server> <ip>...` | Unban IPs |
-| `msm blocklist ip list <server>` | List banned IPs |
-
-### Jar Group Commands
-
-| Command | Description |
-|---------|-------------|
-| `msm jargroup list` | List all jar groups |
-| `msm jargroup create <name> <url>` | Create a jar group |
-| `msm jargroup delete <name>` | Delete a jar group |
-| `msm jargroup rename <old> <new>` | Rename a jar group |
-| `msm jargroup changeurl <name> <url>` | Change jar group URL |
-| `msm jargroup getlatest <name>` | Download latest jar |
-| `msm jar <server> <jargroup> [file] [--force]` | Link server to jar |
-
-### Fabric Commands
-
-| Command | Description |
-|---------|-------------|
-| `msm fabric status <server>` | Show Fabric status for server |
-| `msm fabric on <server>` | Enable Fabric for server |
-| `msm fabric off <server>` | Disable Fabric for server |
-| `msm fabric versions [mc-version]` | List available Fabric versions |
-| `msm fabric update <server>` | Download newer Fabric loader |
-| `msm fabric set-loader <server> <version>` | Pin loader version |
-| `msm fabric set-installer <server> <version>` | Pin installer version |
-
-## Fabric Mod Loader Support
-
-MSM supports [Fabric](https://fabricmc.net/), a lightweight mod loader for Minecraft. Fabric runs as a wrapper around the vanilla server, enabling mods while maintaining compatibility.
-
-### How it works
-
-1. **Enable Fabric for a server:**
-   ```bash
-   msm fabric on survival
-   ```
-   This checks that Fabric supports your Minecraft version and enables Fabric mode.
-
-2. **Start the server:**
-   ```bash
-   msm start survival
-   ```
-   MSM automatically downloads the appropriate Fabric launcher JAR (if not cached) and starts the server using Fabric instead of vanilla.
-
-3. **Fabric JARs are cached globally:**
-   Once downloaded, Fabric launcher JARs are stored in `/opt/msm/fabric/jars/` and shared across all servers using the same Minecraft version.
-
-### Version protection
-
-When Fabric is enabled, MSM prevents upgrading to Minecraft versions that Fabric doesn't support yet:
-
-```bash
-$ msm jar survival minecraft-26.1
-Error: fabric does not yet support minecraft 26.1 - upgrade blocked
-  Hint: Use --force to override (may cause issues)
-```
-
-This prevents accidental world corruption from version mismatches. Use `--force` to override if needed.
-
-### Per-server configuration
-
-Add to `<server>/server.conf`:
-
-```bash
-FABRIC_ENABLED="true"
-FABRIC_LOADER_VERSION="0.16.10"      # Optional: pin specific loader
-FABRIC_INSTALLER_VERSION="1.1.0"     # Optional: pin specific installer
-MC_VERSION="1.21.4"                  # Optional: manual version override
-```
-
-### API usage
-
-MSM queries the Fabric Meta API (`meta.fabricmc.net`) only when:
-- Enabling Fabric (`msm fabric on`)
-- Changing Minecraft versions (`msm jar`)
-- Explicitly checking versions (`msm fabric versions`)
-- Updating Fabric (`msm fabric update`)
-
-Normal operations (start, stop, backup) use cached JARs with no network calls.
-
-## Configuration
-
-MSM reads its configuration from `/etc/msm.conf` (or the path specified by `--config` or the `MSM_CONF` environment variable).
-
-### Key settings
-
-```bash
-# User to run servers as
-USERNAME="minecraft"
-
-# Storage paths
-SERVER_STORAGE_PATH="/opt/msm/servers"
-JAR_STORAGE_PATH="/opt/msm/jars"
-WORLD_ARCHIVE_PATH="/opt/msm/archives/worlds"
-BACKUP_ARCHIVE_PATH="/opt/msm/archives/backups"
-LOG_ARCHIVE_PATH="/opt/msm/archives/logs"
-
-# RAM disk (optional)
-RAMDISK_STORAGE_ENABLED="true"
-RAMDISK_STORAGE_PATH="/dev/shm/msm"
-
-# Defaults
-DEFAULT_RAM="1024"
-DEFAULT_STOP_DELAY="10"
-DEFAULT_RESTART_DELAY="10"
-
-# Cron schedule (regenerate with: sudo msm cron install)
-CRON_MSM_BINARY="/usr/local/bin/msm"
-CRON_MAINTENANCE_HOUR="5"
-CRON_ARCHIVE_RETENTION_DAYS="30"
-
-# Fabric mod loader
-FABRIC_STORAGE_PATH="/opt/msm/fabric"
-FABRIC_CACHE_TTL_MINUTES="60"
-```
-
-### Per-server configuration
-
-Each server can override defaults in `<server>/server.conf`:
-
-```bash
-USERNAME="minecraft"
-RAM="2048"
-JAR_PATH="paper.jar"
-STOP_DELAY="30"
-```
-
-## Requirements
-
-### Platform Support
-
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Linux | Full support | Primary target platform |
-| macOS | Full support | Requires GNU screen (`brew install screen`) |
-| Windows | WSL only | Native Windows not supported |
-
-MSM requires a Unix-like environment due to its reliance on:
-- GNU screen for process management
-- POSIX filesystem semantics
-- `/dev/shm` or equivalent for RAM disk features
-
-### Minecraft Version Support
-
-MSM supports **Minecraft 1.7.0 and later** (Java Edition), including the [new year-based versioning scheme](https://www.minecraft.net/en-us/article/minecraft-new-version-numbering-system) announced by Mojang:
-
-- **Legacy versions:** `1.7.0` through `1.21.x`
-- **Year-based versions:** `26.1`, `26.2`, etc. (starting 2026)
-
-The version comparison correctly handles the transition — year-based versions (e.g., `26.1`) are recognized as newer than legacy versions (e.g., `1.21.11`).
-
-Servers running Minecraft 1.6.x or earlier are not supported due to differences in log file location and format.
-
-### Dependencies
-
-- **GNU screen** (required) - console/process management
-- **rsync** (optional) - rsync backups, RAM disk sync
-- **rdiff-backup** (optional) - incremental backups with rotation
 
 ## Development
 
@@ -437,14 +363,6 @@ make lint
 # Build for all platforms
 make build-all
 ```
-
-## Versioning
-
-MSM uses [semantic versioning](http://semver.org/):
-
-- **Major:** Breaking changes to configuration or command structure
-- **Minor:** New features, backward compatible
-- **Patch:** Bug fixes
 
 ## License
 
