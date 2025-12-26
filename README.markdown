@@ -177,71 +177,19 @@ Each Minecraft server requires its own RAM allocation (configured in `server.con
 
 ## Importing Existing Worlds
 
-If you have an existing Minecraft world (from single-player or another server), you can import it into MSM.
+See [IMPORTING.md](IMPORTING.md) for detailed instructions on importing worlds from:
+- Single-player saves
+- Other Minecraft servers
+- Modpacks with custom jars
 
-### From Single-Player
-
-Single-player worlds are stored in your Minecraft saves folder:
-- **Linux**: `~/.minecraft/saves/<world_name>/`
-- **macOS**: `~/Library/Application Support/minecraft/saves/<world_name>/`
-- **Windows**: `%APPDATA%\.minecraft\saves\<world_name>\`
-
-To import:
-
+Quick start:
 ```bash
-# 1. Create the server
 msm server create survival
-
-# 2. Copy your world into the server's worldstorage directory
-#    The folder MUST be named "world" to match server.properties level-name
-cp -r ~/.minecraft/saves/MyWorld /opt/msm/servers/survival/worldstorage/world
-
-# 3. Fix ownership
-sudo chown -R minecraft:minecraft /opt/msm/servers/survival/worldstorage/
-
-# 4. Download Minecraft and start
+sudo rsync -r --chown=minecraft:minecraft /path/to/world/ \
+    /opt/msm/servers/survival/worldstorage/world/
 msm jar download survival
 msm start survival
 ```
-
-### From Another Server
-
-If migrating from an existing Minecraft server:
-
-```bash
-# 1. Create the MSM server
-msm server create migrated
-
-# 2. Copy the world folder
-cp -r /path/to/old-server/world /opt/msm/servers/migrated/worldstorage/world
-
-# 3. Optionally copy other data
-cp /path/to/old-server/whitelist.json /opt/msm/servers/migrated/
-cp /path/to/old-server/ops.json /opt/msm/servers/migrated/
-
-# 4. Fix ownership, download Minecraft, and start
-sudo chown -R minecraft:minecraft /opt/msm/servers/migrated/
-msm jar download migrated
-msm start migrated
-```
-
-### World Folder Structure
-
-A valid Minecraft world folder contains:
-
-```
-world/
-├── level.dat          # World metadata (required)
-├── region/            # Overworld chunk data
-├── DIM-1/             # Nether (if visited)
-│   └── region/
-├── DIM1/              # The End (if visited)
-│   └── region/
-├── data/              # Map data, raids, etc.
-└── playerdata/        # Player inventories
-```
-
-The folder name must match `level-name` in `server.properties` (default: `world`).
 
 ## Configuration
 
@@ -350,6 +298,14 @@ msm op <server> <player>
 msm kick <server> <player> [reason]
 ```
 
+### System Administration
+
+```bash
+sudo msm setup               # Fix directory ownership and permissions
+msm config                   # Show global configuration
+msm cron install             # Install maintenance cron job
+```
+
 ### Jar Management
 
 ```bash
@@ -437,61 +393,19 @@ msm completion fish > ~/.config/fish/completions/msm.fish
 
 ## Upgrading from Bash MSM
 
-The Go rewrite maintains full compatibility with existing MSM configurations.
+See [UPGRADING.md](UPGRADING.md) for migration instructions from the original bash MSM.
 
-### What stays the same:
-- Configuration file format (`/etc/msm.conf`)
-- Server directory structure
-- Per-server `server.conf` files
-- World storage layout
-- JSON player files (whitelist, ops, bans)
+The Go rewrite maintains full compatibility with existing configurations, server directories, and world storage.
 
-### What's new:
-- Single static binary (no bash dependencies)
-- Structured logging with `-v/--verbose` flag
-- Faster startup and execution
-- Automatic RAM sync daemon (no cron required)
+## Troubleshooting
 
-### Migration steps:
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues including:
+- Permission denied errors
+- Server stops immediately
+- World not loading
+- Fabric issues
 
-1. **Stop all servers:**
-   ```bash
-   msm stop --now
-   ```
-
-2. **Backup your configuration:**
-   ```bash
-   cp /etc/msm.conf /etc/msm.conf.backup
-   ```
-
-3. **Clone and build:**
-   ```bash
-   git clone https://github.com/msmhq/msm.git
-   cd msm
-   make build
-   ```
-
-4. **Remove old bash MSM:**
-   ```bash
-   sudo make migrate
-   ```
-
-5. **Install:**
-   ```bash
-   sudo make install
-   ```
-
-6. **Verify and start:**
-   ```bash
-   msm config
-   msm server list
-   msm start
-   ```
-
-### Terminology changes:
-- `whitelist` commands are now `allowlist`
-- `blacklist` commands are now `blocklist`
-- The underlying Minecraft files remain unchanged
+Quick fix for most permission issues: `sudo msm setup`
 
 ## Development
 

@@ -1,0 +1,160 @@
+# Troubleshooting
+
+Common issues and solutions for MSM.
+
+## Permission denied errors
+
+If you see "permission denied" errors when running MSM commands:
+
+```bash
+# Fix directory ownership and permissions
+sudo msm setup
+```
+
+This ensures all MSM directories are owned by `minecraft:minecraft` with proper group-write permissions (2775).
+
+### Common permission scenarios
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `failed to save fabric cache` | Root created cache files | `sudo msm setup` |
+| `cannot create directory` | Directory owned by wrong user | `sudo msm setup` |
+| `permission denied: server owned by user X` | Running as wrong user | Use `sudo` or switch to server owner |
+
+## Server stops immediately after starting
+
+Check the server logs:
+
+```bash
+cat /opt/msm/servers/<name>/logs/latest.log
+```
+
+### Common causes
+
+**EULA not accepted**
+```bash
+sudo msm server init <name>
+```
+This auto-accepts the EULA and creates any missing config files.
+
+**Java not installed**
+
+| Minecraft Version | Minimum Java |
+|-------------------|--------------|
+| 1.21+ | Java 21 |
+| 1.18 - 1.20.x | Java 17 |
+| 1.17 | Java 16 |
+| 1.12 - 1.16.x | Java 8 |
+
+Install Java:
+```bash
+# Debian/Ubuntu
+sudo apt install openjdk-21-jre-headless
+
+# RHEL/Fedora
+sudo dnf install java-21-openjdk-headless
+
+# macOS
+brew install openjdk@21
+```
+
+**Wrong Minecraft version**
+
+Ensure the jar version matches your world. Older worlds may need older Minecraft versions.
+
+## World not loading (new random world generated)
+
+MSM stores worlds in `worldstorage/` and creates symlinks on start.
+
+### Checklist
+
+1. **World folder exists:**
+   ```bash
+   ls /opt/msm/servers/<name>/worldstorage/
+   ```
+
+2. **Folder name matches `level-name`:**
+   ```bash
+   grep level-name /opt/msm/servers/<name>/server.properties
+   ```
+   The worldstorage folder must have the same name (default: `world`).
+
+3. **Symlink created on start:**
+   ```bash
+   ls -la /opt/msm/servers/<name>/world
+   ```
+   Should show: `world -> /opt/msm/servers/<name>/worldstorage/world`
+
+4. **No conflicting directory:**
+   If a real `world/` directory exists (not a symlink) with data, MSM won't overwrite it. Move or delete it first.
+
+## Status shows different results for different users
+
+Screen sessions are user-specific. When running as root via `sudo`, MSM checks the configured user's screen sessions.
+
+```bash
+# These should show the same result
+sudo msm status <server>
+su - minecraft -c "msm status <server>"
+```
+
+If they differ, the server may have been started by a different user than configured.
+
+## Fabric-related issues
+
+### Fabric version not supported
+
+```
+Error: fabric does not yet support minecraft X.Y.Z
+```
+
+Fabric may not support the latest Minecraft snapshot/release yet. Check [fabricmc.net](https://fabricmc.net/) for supported versions.
+
+### Fabric jar download fails
+
+```bash
+# Check network connectivity
+curl -I https://meta.fabricmc.net/v2/versions/game
+
+# Clear fabric cache and retry
+sudo rm /opt/msm/fabric/cache.json
+sudo msm setup
+msm start <server>
+```
+
+## Screen session issues
+
+### Can't attach to console
+
+```bash
+# Check if session exists
+screen -ls
+
+# Try attaching as the server owner
+sudo -u minecraft screen -r msm-<servername>
+```
+
+### Session exists but server not running
+
+The screen session may be orphaned. Kill it and restart:
+
+```bash
+msm stop <server> --now
+screen -wipe
+msm start <server>
+```
+
+## Getting more information
+
+Enable verbose logging:
+
+```bash
+msm -v start <server>
+msm --verbose status <server>
+```
+
+Check system logs:
+
+```bash
+journalctl -u msm  # If using systemd
+```
