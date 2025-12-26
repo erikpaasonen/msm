@@ -67,6 +67,17 @@ var serverConfigCmd = &cobra.Command{
 			fmt.Printf("  Restart Delay: %d seconds\n", s.Config.RestartDelay)
 			fmt.Printf("  World Storage: %s\n", s.Config.WorldStoragePath)
 			fmt.Printf("  Inactive World Storage: %s\n", s.Config.WorldStorageInactivePath)
+			fmt.Printf("  Fabric Enabled: %v\n", s.Config.FabricEnabled)
+			if s.Config.FabricEnabled {
+				if s.Config.FabricLoaderVersion != "" {
+					fmt.Printf("  Fabric Loader Version: %s\n", s.Config.FabricLoaderVersion)
+				} else {
+					fmt.Printf("  Fabric Loader Version: (latest)\n")
+				}
+				if s.Config.FabricInstallerVersion != "" {
+					fmt.Printf("  Fabric Installer Version: %s\n", s.Config.FabricInstallerVersion)
+				}
+			}
 			return nil
 		}
 

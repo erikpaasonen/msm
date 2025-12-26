@@ -120,6 +120,18 @@ setup:
 		echo "  Setting permissions on $(MSM_HOME)/servers"; \
 		chmod 2775 $(MSM_HOME)/servers; \
 	fi
+	@# Ensure group-writable on fabric directory (for shared cache)
+	@PERMS=$$(stat -c '%a' $(MSM_HOME)/fabric 2>/dev/null || stat -f '%OLp' $(MSM_HOME)/fabric 2>/dev/null); \
+	if [ "$$PERMS" != "2775" ]; then \
+		echo "  Setting permissions on $(MSM_HOME)/fabric"; \
+		chmod 2775 $(MSM_HOME)/fabric; \
+	fi
+	@# Ensure group-writable on jars directory (for shared jar cache)
+	@PERMS=$$(stat -c '%a' $(MSM_HOME)/jars 2>/dev/null || stat -f '%OLp' $(MSM_HOME)/jars 2>/dev/null); \
+	if [ "$$PERMS" != "2775" ]; then \
+		echo "  Setting permissions on $(MSM_HOME)/jars"; \
+		chmod 2775 $(MSM_HOME)/jars; \
+	fi
 	@echo "System setup complete!"
 
 systemd-install:
