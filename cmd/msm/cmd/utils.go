@@ -46,7 +46,7 @@ var logrollCmd = &cobra.Command{
 
 var serverConfigCmd = &cobra.Command{
 	Use:   "config <server> [key] [value]",
-	Short: "Show or set server configuration",
+	Short: "Show or set per-server configuration",
 	Args:  cobra.RangeArgs(1, 3),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		serverName := args[0]
@@ -179,6 +179,5 @@ func init() {
 	logrollCmd.Flags().Bool("all", false, "Roll logs for all servers")
 
 	rootCmd.AddCommand(logrollCmd)
-	rootCmd.AddCommand(serverConfigCmd)
 	rootCmd.AddCommand(updateCmd)
 }

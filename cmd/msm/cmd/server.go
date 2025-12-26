@@ -242,6 +242,7 @@ func init() {
 	serverCmd.AddCommand(serverCreateCmd)
 	serverCmd.AddCommand(serverDeleteCmd)
 	serverCmd.AddCommand(serverRenameCmd)
+	serverCmd.AddCommand(serverConfigCmd)
 
 	rootCmd.AddCommand(serverCmd)
 	rootCmd.AddCommand(sayCmd)

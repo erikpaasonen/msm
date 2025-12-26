@@ -300,6 +300,16 @@ See [PERMISSIONS.markdown](PERMISSIONS.markdown) for the full guide including mu
 
 ## Common Commands
 
+### Server Management
+
+```bash
+msm server list              # List all servers
+msm server create <name>     # Create new server (auto-assigns port)
+msm server delete <name>     # Delete a server
+msm server rename <old> <new>  # Rename a server
+msm server config <server>   # Show per-server configuration
+```
+
 ### Server Lifecycle
 
 ```bash
