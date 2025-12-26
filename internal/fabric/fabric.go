@@ -77,7 +77,7 @@ func (c *Cache) Save(path string) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := mkdirAllWithOwner(filepath.Dir(path)); err != nil {
 		return err
 	}
 
@@ -91,6 +91,18 @@ func (c *Cache) Save(path string) error {
 	}
 
 	chownToDefaultUser(path)
+	return nil
+}
+
+func mkdirAllWithOwner(path string) error {
+	if err := os.MkdirAll(path, 0775); err != nil {
+		return err
+	}
+	chownToDefaultUser(path)
+	parentDir := filepath.Dir(path)
+	if parentDir != path && parentDir != "/" {
+		chownToDefaultUser(parentDir)
+	}
 	return nil
 }
 

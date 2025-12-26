@@ -59,8 +59,8 @@ migrate:
 	fi
 	@echo "Migration cleanup complete. Run 'sudo make install' to complete installation."
 
-setup:
-	@echo "Setting up MSM system user and directories..."
+setup: build
+	@echo "Setting up MSM system user..."
 	@# Ensure group exists
 	@if ! getent group $(MSM_USER) >/dev/null 2>&1; then \
 		echo "Creating group '$(MSM_USER)'..."; \
@@ -92,46 +92,9 @@ setup:
 		echo "Updating home directory for '$(MSM_USER)' from $$CURRENT_HOME to $(MSM_HOME)..."; \
 		usermod -d $(MSM_HOME) $(MSM_USER); \
 	fi
-	@# Create directory structure (mkdir -p is idempotent)
-	@echo "Ensuring directory structure at $(MSM_HOME)..."
-	@mkdir -p $(MSM_HOME)/servers
-	@mkdir -p $(MSM_HOME)/jars
-	@mkdir -p $(MSM_HOME)/versioning
-	@mkdir -p $(MSM_HOME)/archives/worlds
-	@mkdir -p $(MSM_HOME)/archives/logs
-	@mkdir -p $(MSM_HOME)/archives/backups
-	@mkdir -p $(MSM_HOME)/fabric
-	@# Fix ownership only on directories that need it (faster for large installs)
-	@echo "Ensuring ownership and permissions..."
-	@for dir in $(MSM_HOME) $(MSM_HOME)/servers $(MSM_HOME)/jars $(MSM_HOME)/versioning \
-		$(MSM_HOME)/archives $(MSM_HOME)/archives/worlds $(MSM_HOME)/archives/logs \
-		$(MSM_HOME)/archives/backups $(MSM_HOME)/fabric; do \
-		if [ -d "$$dir" ]; then \
-			OWNER=$$(stat -c '%U:%G' "$$dir" 2>/dev/null || stat -f '%Su:%Sg' "$$dir" 2>/dev/null); \
-			if [ "$$OWNER" != "$(MSM_USER):$(MSM_USER)" ]; then \
-				echo "  Fixing ownership on $$dir"; \
-				chown $(MSM_USER):$(MSM_USER) "$$dir"; \
-			fi; \
-		fi; \
-	done
-	@# Ensure setgid on servers directory
-	@PERMS=$$(stat -c '%a' $(MSM_HOME)/servers 2>/dev/null || stat -f '%OLp' $(MSM_HOME)/servers 2>/dev/null); \
-	if [ "$$PERMS" != "2775" ]; then \
-		echo "  Setting permissions on $(MSM_HOME)/servers"; \
-		chmod 2775 $(MSM_HOME)/servers; \
-	fi
-	@# Ensure group-writable on fabric directory (for shared cache)
-	@PERMS=$$(stat -c '%a' $(MSM_HOME)/fabric 2>/dev/null || stat -f '%OLp' $(MSM_HOME)/fabric 2>/dev/null); \
-	if [ "$$PERMS" != "2775" ]; then \
-		echo "  Setting permissions on $(MSM_HOME)/fabric"; \
-		chmod 2775 $(MSM_HOME)/fabric; \
-	fi
-	@# Ensure group-writable on jars directory (for shared jar cache)
-	@PERMS=$$(stat -c '%a' $(MSM_HOME)/jars 2>/dev/null || stat -f '%OLp' $(MSM_HOME)/jars 2>/dev/null); \
-	if [ "$$PERMS" != "2775" ]; then \
-		echo "  Setting permissions on $(MSM_HOME)/jars"; \
-		chmod 2775 $(MSM_HOME)/jars; \
-	fi
+	@# Use msm setup for directory structure and permissions
+	@echo "Setting up directories..."
+	@./bin/msm setup
 	@echo "System setup complete!"
 
 systemd-install:

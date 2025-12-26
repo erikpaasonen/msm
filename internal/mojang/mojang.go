@@ -132,7 +132,7 @@ func EnsureCached(cacheDir, version string) (string, error) {
 		return "", fmt.Errorf("no server download available for version %q", version)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(jarPath), 0755); err != nil {
+	if err := mkdirAllWithOwner(filepath.Dir(jarPath)); err != nil {
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -161,6 +161,18 @@ func EnsureCached(cacheDir, version string) (string, error) {
 	chownToDefaultUser(jarPath)
 
 	return jarPath, nil
+}
+
+func mkdirAllWithOwner(path string) error {
+	if err := os.MkdirAll(path, 0775); err != nil {
+		return err
+	}
+	chownToDefaultUser(path)
+	parentDir := filepath.Dir(path)
+	if parentDir != path && parentDir != "/" {
+		chownToDefaultUser(parentDir)
+	}
+	return nil
 }
 
 func chownToDefaultUser(path string) {

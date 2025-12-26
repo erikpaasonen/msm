@@ -206,7 +206,7 @@ func (c *Client) DownloadServerJar(mcVersion, loaderVersion, installerVersion st
 	}
 
 	jarsDir := filepath.Dir(jarPath)
-	if err := os.MkdirAll(jarsDir, 0755); err != nil {
+	if err := mkdirAllWithOwner(jarsDir); err != nil {
 		return "", fmt.Errorf("failed to create jars directory: %w", err)
 	}
 
