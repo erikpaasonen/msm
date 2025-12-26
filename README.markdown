@@ -131,11 +131,60 @@ msm cmd survival "say Hello everyone!"
 - **Multi-server management:** Run multiple Minecraft servers from one machine
 - **Server lifecycle:** Start, stop, restart with configurable delays and player warnings
 - **World backups:** Zip, rsync, or rdiff-backup with rotation
-- **RAM disk support:** Load worlds into RAM for reduced lag
+- **RAM disk support:** Load worlds into RAM for reduced lag (see below)
 - **Jar management:** Organize jars into groups, auto-download updates
 - **Player management:** Allowlist, operators, bans (players and IPs)
 - **Log rolling:** Automatic log compression and archival
 - **Console access:** Direct access to server console via screen
+
+## RAM Disk Support
+
+MSM can load Minecraft worlds into RAM (`/dev/shm`) for significantly reduced I/O latency. This is especially useful for servers with high player counts or complex redstone.
+
+### How it works
+
+1. **Enable RAM for a world:**
+   ```bash
+   msm worlds ram survival world
+   ```
+   This copies the world to `/dev/shm/msm/survival/world` and sets an `in_ram` flag.
+
+2. **Start the server:**
+   ```bash
+   msm start survival
+   ```
+   MSM automatically creates a symlink from the world directory to the RAM copy, so Minecraft reads/writes directly to RAM.
+
+3. **Automatic sync daemon:**
+   When a server with RAM worlds starts, MSM spawns a background sync daemon (`msm-sync` screen session) that syncs RAM back to disk every 10 minutes. This runs automatically — no cron job required.
+
+4. **On server stop:**
+   When the last server stops, the sync daemon automatically terminates.
+
+### Viewing active sessions
+
+```bash
+$ screen -ls
+There are screens on:
+    12345.msm-survival    (Detached)
+    12346.msm-sync        (Detached)
+```
+
+### Manual sync
+
+To force an immediate sync:
+```bash
+msm worlds todisk survival    # Single server
+msm worlds todisk --all       # All running servers
+```
+
+### Data loss window
+
+In the event of unexpected shutdown (power loss, kernel panic), you may lose up to 10 minutes of world changes. The sync interval is not currently configurable but can be changed by modifying `SyncIntervalSecs` in `internal/server/sync.go`.
+
+### Differences from bash MSM
+
+The original bash MSM required a cron job (`/etc/cron.d/msm`) for periodic syncing. The Go rewrite manages this automatically via the `msm-sync` screen session, eliminating the need for system-level cron configuration.
 
 ## Command Reference
 

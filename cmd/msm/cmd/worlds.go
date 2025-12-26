@@ -118,45 +118,70 @@ var worldsRAMCmd = &cobra.Command{
 }
 
 var worldsToDiskCmd = &cobra.Command{
-	Use:   "todisk <server>",
+	Use:   "todisk [server]",
 	Short: "Sync all RAM worlds to disk",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		all, _ := cmd.Flags().GetBool("all")
+
+		if all || len(args) == 0 {
+			return syncAllServers()
+		}
+
 		serverName := args[0]
+		return syncServerToDisk(serverName)
+	},
+}
 
-		s, err := server.Get(serverName, cfg)
-		if err != nil {
-			return err
+func syncServerToDisk(serverName string) error {
+	s, err := server.Get(serverName, cfg)
+	if err != nil {
+		return err
+	}
+
+	if s.IsRunning() {
+		s.SaveOff()
+		s.SaveAll()
+		defer s.SaveOn()
+	}
+
+	worlds, err := world.DiscoverAll(s.Path, s.Name, cfg, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath)
+	if err != nil {
+		return err
+	}
+
+	synced := 0
+	for _, w := range worlds {
+		if w.InRAM {
+			logging.Info("syncing world to disk", "server", serverName, "world", w.Name)
+			if err := w.ToDisk(s.Config.Username); err != nil {
+				logging.Error("failed to sync world", "world", w.Name, "error", err)
+				continue
+			}
+			synced++
 		}
+	}
 
+	if synced == 0 {
+		logging.Debug("no RAM worlds to sync", "server", serverName)
+	}
+	return nil
+}
+
+func syncAllServers() error {
+	servers, err := server.DiscoverAll(cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range servers {
 		if s.IsRunning() {
-			s.SaveOff()
-			s.SaveAll()
-			defer s.SaveOn()
-		}
-
-		worlds, err := world.DiscoverAll(s.Path, s.Name, cfg, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath)
-		if err != nil {
-			return err
-		}
-
-		synced := 0
-		for _, w := range worlds {
-			if w.InRAM {
-				logging.Info("syncing world to disk", "world", w.Name)
-				if err := w.ToDisk(s.Config.Username); err != nil {
-					logging.Error("failed to sync world", "world", w.Name, "error", err)
-					continue
-				}
-				synced++
+			if err := syncServerToDisk(s.Name); err != nil {
+				logging.Warn("failed to sync server", "server", s.Name, "error", err)
 			}
 		}
-
-		if synced == 0 {
-			logging.Info("no RAM worlds to sync")
-		}
-		return nil
-	},
+	}
+	return nil
 }
 
 var worldsBackupCmd = &cobra.Command{
@@ -242,6 +267,8 @@ var serverBackupCmd = &cobra.Command{
 }
 
 func init() {
+	worldsToDiskCmd.Flags().Bool("all", false, "Sync all running servers")
+
 	worldsCmd.AddCommand(worldsListCmd)
 	worldsCmd.AddCommand(worldsOnCmd)
 	worldsCmd.AddCommand(worldsOffCmd)

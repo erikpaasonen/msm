@@ -373,4 +373,95 @@ var _ = Describe("World", func() {
 			Expect(w.Status()).To(Equal("active, in RAM"))
 		})
 	})
+
+	Describe("SetupRAMSymlink", func() {
+		var (
+			worldPath   string
+			ramPath     string
+			symlinkPath string
+		)
+
+		BeforeEach(func() {
+			globalCfg.RamdiskStorageEnabled = true
+			globalCfg.RamdiskStoragePath = filepath.Join(tempDir, "ramdisk")
+
+			worldPath = filepath.Join(serverPath, "worldstorage", "world")
+			Expect(os.MkdirAll(worldPath, 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(worldPath, "level.dat"), []byte("data"), 0644)).To(Succeed())
+
+			ramPath = filepath.Join(globalCfg.RamdiskStoragePath, "survival", "world")
+			Expect(os.MkdirAll(ramPath, 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(ramPath, "level.dat"), []byte("data"), 0644)).To(Succeed())
+
+			symlinkPath = filepath.Join(serverPath, "worldstorage", "world")
+		})
+
+		Context("when world is in RAM", func() {
+			BeforeEach(func() {
+				Expect(os.WriteFile(filepath.Join(worldPath, "in_ram"), []byte{}, 0644)).To(Succeed())
+			})
+
+			It("replaces world directory with symlink to RAM path", func() {
+				w, err := world.Get(serverPath, "survival", "world", "worldstorage", "worldstorage_inactive", globalCfg)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(w.InRAM).To(BeTrue())
+
+				err = w.SetupRAMSymlink("worldstorage")
+				Expect(err).NotTo(HaveOccurred())
+
+				linkTarget, err := os.Readlink(symlinkPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(linkTarget).To(Equal(ramPath))
+			})
+
+			It("is idempotent when symlink already exists", func() {
+				w, err := world.Get(serverPath, "survival", "world", "worldstorage", "worldstorage_inactive", globalCfg)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = w.SetupRAMSymlink("worldstorage")
+				Expect(err).NotTo(HaveOccurred())
+
+				err = w.SetupRAMSymlink("worldstorage")
+				Expect(err).NotTo(HaveOccurred())
+
+				linkTarget, err := os.Readlink(symlinkPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(linkTarget).To(Equal(ramPath))
+			})
+		})
+
+		Context("when world is not in RAM", func() {
+			It("does nothing", func() {
+				w, err := world.Get(serverPath, "survival", "world", "worldstorage", "worldstorage_inactive", globalCfg)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(w.InRAM).To(BeFalse())
+
+				err = w.SetupRAMSymlink("worldstorage")
+				Expect(err).NotTo(HaveOccurred())
+
+				info, err := os.Lstat(symlinkPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(info.Mode() & os.ModeSymlink).To(BeZero())
+			})
+		})
+
+		Context("when ramdisk is disabled", func() {
+			BeforeEach(func() {
+				globalCfg.RamdiskStorageEnabled = false
+				Expect(os.WriteFile(filepath.Join(worldPath, "in_ram"), []byte{}, 0644)).To(Succeed())
+			})
+
+			It("does nothing", func() {
+				w, err := world.Get(serverPath, "survival", "world", "worldstorage", "worldstorage_inactive", globalCfg)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = w.SetupRAMSymlink("worldstorage")
+				Expect(err).NotTo(HaveOccurred())
+
+				info, err := os.Lstat(symlinkPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(info.Mode() & os.ModeSymlink).To(BeZero())
+			})
+		})
+	})
 })

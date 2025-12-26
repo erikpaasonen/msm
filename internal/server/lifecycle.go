@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/msmhq/msm/internal/config"
+	"github.com/msmhq/msm/internal/logging"
+	"github.com/msmhq/msm/internal/world"
 )
 
 func (s *Server) IsRunning() bool {
@@ -25,11 +27,53 @@ func (s *Server) Start() error {
 		return fmt.Errorf("jar file not found: %s", jarPath)
 	}
 
+	if err := s.SetupRAMWorlds(); err != nil {
+		return fmt.Errorf("failed to set up RAM worlds: %w", err)
+	}
+
 	invocation := s.Config.Invocation
 	invocation = strings.ReplaceAll(invocation, "{RAM}", strconv.Itoa(s.Config.RAM))
 	invocation = strings.ReplaceAll(invocation, "{JAR}", s.Config.JarPath)
 
-	return s.Screen.Start(s.Path, invocation, s.Config.Username)
+	if err := s.Screen.Start(s.Path, invocation, s.Config.Username); err != nil {
+		return err
+	}
+
+	if hasRAM, _ := AnyRAMWorldsConfigured(s.GlobalCfg); hasRAM {
+		if err := StartSyncDaemon(s.GlobalCfg); err != nil {
+			logging.Warn("failed to start sync daemon", "error", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Server) SetupRAMWorlds() error {
+	if !s.GlobalCfg.RamdiskStorageEnabled {
+		return nil
+	}
+
+	worlds, err := world.DiscoverAll(
+		s.Path,
+		s.Name,
+		s.GlobalCfg,
+		s.Config.WorldStoragePath,
+		s.Config.WorldStorageInactivePath,
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, w := range worlds {
+		if w.InRAM && w.Active {
+			logging.Debug("setting up RAM symlink", "world", w.Name, "server", s.Name)
+			if err := w.SetupRAMSymlink(s.Config.WorldStoragePath); err != nil {
+				return fmt.Errorf("failed to set up RAM symlink for world %q: %w", w.Name, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *Server) Stop(immediate bool) error {
@@ -51,12 +95,36 @@ func (s *Server) Stop(immediate bool) error {
 
 	for i := 0; i < 30; i++ {
 		if !s.IsRunning() {
+			s.maybeStopSyncDaemon()
 			return nil
 		}
 		time.Sleep(1 * time.Second)
 	}
 
-	return s.Screen.Kill()
+	if err := s.Screen.Kill(); err != nil {
+		return err
+	}
+
+	s.maybeStopSyncDaemon()
+	return nil
+}
+
+func (s *Server) maybeStopSyncDaemon() {
+	if !IsSyncDaemonRunning() {
+		return
+	}
+
+	running, err := AnyServersRunning(s.GlobalCfg)
+	if err != nil {
+		logging.Warn("failed to check running servers", "error", err)
+		return
+	}
+
+	if !running {
+		if err := StopSyncDaemon(); err != nil {
+			logging.Warn("failed to stop sync daemon", "error", err)
+		}
+	}
 }
 
 func (s *Server) Restart(immediate bool) error {
