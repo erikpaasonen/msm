@@ -340,9 +340,14 @@ MSM requires a Unix-like environment due to its reliance on:
 
 ### Minecraft Version Support
 
-MSM supports **Minecraft 1.7.0 and later** (Java Edition). This includes all modern versions through the upcoming year-based versioning (e.g., `25.1`).
+MSM supports **Minecraft 1.7.0 and later** (Java Edition), including the [new year-based versioning scheme](https://www.minecraft.net/en-us/article/minecraft-new-version-numbering-system) announced by Mojang:
 
-Servers running Minecraft 1.6.x or earlier are no longer supported. The original bash MSM supported 1.2.0+, but the Go rewrite drops pre-1.7 support to avoid complexity of handling differences in log file location and format.
+- **Legacy versions:** `1.7.0` through `1.21.x`
+- **Year-based versions:** `26.1`, `26.2`, etc. (starting 2026)
+
+The version comparison correctly handles the transition — year-based versions (e.g., `26.1`) are recognized as newer than legacy versions (e.g., `1.21.11`).
+
+Servers running Minecraft 1.6.x or earlier are not supported due to differences in log file location and format.
 
 ### Dependencies
 

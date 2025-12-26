@@ -309,6 +309,54 @@ commands:
 			Expect(v).NotTo(BeNil())
 			Expect(v.Version).To(Equal("1.10.0"))
 		})
+
+		Context("with year-based versions (25.x, 26.x)", func() {
+			It("correctly orders year-based versions after 1.x versions", func() {
+				v := version.FindClosest(versions, "minecraft", "25.11")
+				Expect(v).NotTo(BeNil())
+				Expect(v.Version).To(Equal("1.10.0"))
+			})
+
+			It("finds closest when mix of old and year-based versions exist", func() {
+				versions = append(versions, &version.Version{Type: "minecraft", Version: "25.1"})
+				versions = append(versions, &version.Version{Type: "minecraft", Version: "25.11"})
+
+				v := version.FindClosest(versions, "minecraft", "25.5")
+				Expect(v).NotTo(BeNil())
+				Expect(v.Version).To(Equal("25.1"))
+			})
+
+			It("finds year-based version when target is newer year", func() {
+				versions = append(versions, &version.Version{Type: "minecraft", Version: "25.1"})
+				versions = append(versions, &version.Version{Type: "minecraft", Version: "25.11"})
+
+				v := version.FindClosest(versions, "minecraft", "26.1")
+				Expect(v).NotTo(BeNil())
+				Expect(v.Version).To(Equal("25.11"))
+			})
+
+			It("correctly compares 1.21.11 (old) vs 25.11 (new)", func() {
+				versions = append(versions, &version.Version{Type: "minecraft", Version: "1.21.11"})
+
+				v := version.FindClosest(versions, "minecraft", "25.11")
+				Expect(v).NotTo(BeNil())
+				Expect(v.Version).To(Equal("1.21.11"))
+			})
+
+			It("correctly compares multiple year-based versions", func() {
+				versions = []*version.Version{
+					{Type: "minecraft", Version: "1.7.0"},
+					{Type: "minecraft", Version: "25.1"},
+					{Type: "minecraft", Version: "25.11"},
+					{Type: "minecraft", Version: "26.1"},
+					{Type: "minecraft", Version: "26.2"},
+				}
+
+				v := version.FindClosest(versions, "minecraft", "26.5")
+				Expect(v).NotTo(BeNil())
+				Expect(v.Version).To(Equal("26.2"))
+			})
+		})
 	})
 
 	Describe("GetCommand", func() {
