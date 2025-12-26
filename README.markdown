@@ -33,7 +33,7 @@ MSM supports **Minecraft 1.7.0 and later** (Java Edition), including the new yea
 
 ```bash
 # 1. Install MSM (see Installation section for details)
-make build && sudo make install
+make build && sudo make setup && sudo make install
 
 # 2. Create a server
 msm server create survival
@@ -72,63 +72,46 @@ sudo dnf install golang screen rsync
 brew install go screen rsync
 ```
 
-### System Setup
-
-Create the minecraft user and directory structure:
-
-```bash
-# Create system user and group
-sudo groupadd minecraft
-sudo adduser --system --home /opt/msm --shell /bin/bash --ingroup minecraft minecraft
-
-# Create directory structure
-sudo mkdir -p /opt/msm/{servers,jars,versioning,archives/{worlds,logs,backups},fabric}
-sudo chown -R minecraft:minecraft /opt/msm
-sudo chmod 2775 /opt/msm/servers  # setgid for multi-user support
-```
-
-For multi-user setups where multiple people manage their own servers, see [PERMISSIONS.markdown](PERMISSIONS.markdown).
-
 ### From Source (Recommended)
-
-Building from source is recommended because `make install` handles everything automatically:
 
 ```bash
 git clone https://github.com/msmhq/msm.git
 cd msm
 make build
-sudo make install
+sudo make setup      # Creates minecraft user and /opt/msm directories
+sudo make install    # Installs binary, config, and cron job
 ```
 
-This installs:
-- Binary to `/usr/local/bin/msm`
-- Default config to `/etc/msm.conf` (if not present)
-- Cron job to `/etc/cron.d/msm`
+Optionally enable auto-start on boot:
+```bash
+sudo make systemd-install
+```
+
+For multi-user setups where multiple people manage their own servers, see [PERMISSIONS.markdown](PERMISSIONS.markdown)
 
 ### Pre-built Binaries
 
 Download from the [releases page](https://github.com/msmhq/msm/releases).
 
-**Note:** Pre-built binaries require manual setup of the config file and cron job:
+**Trade-off:** Pre-built binaries skip the build step but require manual setup. If you have Go installed, building from source is easier because `make setup` and `make install` handle everything.
 
 ```bash
-# Linux (amd64)
+# Download binary (Linux amd64 example)
 sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o /usr/local/bin/msm
 sudo chmod +x /usr/local/bin/msm
 
-# Manual steps required with pre-built binary:
+# Download config
 sudo curl -L https://raw.githubusercontent.com/msmhq/msm/main/msm.conf -o /etc/msm.conf
+
+# Create minecraft user and directories
+sudo groupadd minecraft
+sudo useradd --system --home-dir /opt/msm --shell /bin/bash --gid minecraft minecraft
+sudo mkdir -p /opt/msm/{servers,jars,versioning,archives/{worlds,logs,backups},fabric}
+sudo chown -R minecraft:minecraft /opt/msm
+sudo chmod 2775 /opt/msm/servers
+
+# Install cron job
 sudo msm cron install
-```
-
-### Systemd Integration (Optional)
-
-To auto-start servers on boot:
-
-```bash
-sudo cp init/msm.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable msm
 ```
 
 ### Verify Installation
