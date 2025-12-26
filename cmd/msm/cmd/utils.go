@@ -13,12 +13,28 @@ import (
 )
 
 var logrollCmd = &cobra.Command{
-	Use:   "logroll <server>",
+	Use:   "logroll [server]",
 	Short: "Roll (archive) server logs",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName := args[0]
+		all, _ := cmd.Flags().GetBool("all")
 
+		if all || len(args) == 0 {
+			servers, err := server.DiscoverAll(cfg)
+			if err != nil {
+				return err
+			}
+			for _, s := range servers {
+				if err := log.Roll(s.LogPath(), cfg.LogArchivePath, s.Name); err != nil {
+					fmt.Printf("Failed to roll logs for %s: %v\n", s.Name, err)
+				} else {
+					fmt.Printf("Rolled logs for %s\n", s.Name)
+				}
+			}
+			return nil
+		}
+
+		serverName := args[0]
 		s, err := server.Get(serverName, cfg)
 		if err != nil {
 			return err
@@ -160,6 +176,7 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	updateCmd.Flags().Bool("no-scripts", false, "Skip updating scripts")
+	logrollCmd.Flags().Bool("all", false, "Roll logs for all servers")
 
 	rootCmd.AddCommand(logrollCmd)
 	rootCmd.AddCommand(serverConfigCmd)

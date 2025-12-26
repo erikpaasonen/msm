@@ -185,46 +185,70 @@ func syncAllServers() error {
 }
 
 var worldsBackupCmd = &cobra.Command{
-	Use:   "backup <server>",
+	Use:   "backup [server]",
 	Short: "Backup all worlds for a server",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		all, _ := cmd.Flags().GetBool("all")
+
+		if all || len(args) == 0 {
+			return backupAllServers()
+		}
+
 		serverName := args[0]
-
-		s, err := server.Get(serverName, cfg)
-		if err != nil {
-			return err
-		}
-
-		if s.IsRunning() {
-			s.Say(s.Config.MessageWorldBackupStarted)
-			s.SaveOff()
-			s.SaveAll()
-			defer func() {
-				s.SaveOn()
-				s.Say(s.Config.MessageWorldBackupFinished)
-			}()
-		}
-
-		worlds, err := world.DiscoverAll(s.Path, s.Name, cfg, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath)
-		if err != nil {
-			return err
-		}
-
-		for _, w := range worlds {
-			if w.InRAM {
-				if err := w.ToDisk(s.Config.Username); err != nil {
-					logging.Warn("failed to sync world to disk", "world", w.Name, "error", err)
-				}
-			}
-
-			if err := w.Backup("", s.Config.Username); err != nil {
-				logging.Error("failed to backup world", "world", w.Name, "error", err)
-			}
-		}
-
-		return nil
+		return backupServerWorlds(serverName)
 	},
+}
+
+func backupServerWorlds(serverName string) error {
+	s, err := server.Get(serverName, cfg)
+	if err != nil {
+		return err
+	}
+
+	if s.IsRunning() {
+		s.Say(s.Config.MessageWorldBackupStarted)
+		s.SaveOff()
+		s.SaveAll()
+		defer func() {
+			s.SaveOn()
+			s.Say(s.Config.MessageWorldBackupFinished)
+		}()
+	}
+
+	worlds, err := world.DiscoverAll(s.Path, s.Name, cfg, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath)
+	if err != nil {
+		return err
+	}
+
+	for _, w := range worlds {
+		if w.InRAM {
+			if err := w.ToDisk(s.Config.Username); err != nil {
+				logging.Warn("failed to sync world to disk", "world", w.Name, "error", err)
+			}
+		}
+
+		if err := w.Backup("", s.Config.Username); err != nil {
+			logging.Error("failed to backup world", "world", w.Name, "error", err)
+		}
+	}
+
+	return nil
+}
+
+func backupAllServers() error {
+	servers, err := server.DiscoverAll(cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range servers {
+		logging.Info("backing up worlds", "server", s.Name)
+		if err := backupServerWorlds(s.Name); err != nil {
+			logging.Warn("failed to backup server", "server", s.Name, "error", err)
+		}
+	}
+	return nil
 }
 
 var serverBackupCmd = &cobra.Command{
@@ -268,6 +292,7 @@ var serverBackupCmd = &cobra.Command{
 
 func init() {
 	worldsToDiskCmd.Flags().Bool("all", false, "Sync all running servers")
+	worldsBackupCmd.Flags().Bool("all", false, "Backup all servers")
 
 	worldsCmd.AddCommand(worldsListCmd)
 	worldsCmd.AddCommand(worldsOnCmd)

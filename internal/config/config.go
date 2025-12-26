@@ -63,6 +63,10 @@ type Config struct {
 	DefaultMessageCompleteBackupFinished string
 
 	UpdateURL string
+
+	CronMSMBinary            string
+	CronMaintenanceHour      int
+	CronArchiveRetentionDays int
 }
 
 func Load(path string) (*Config, error) {
@@ -116,6 +120,9 @@ func Load(path string) (*Config, error) {
 		DefaultMessageCompleteBackupStarted:  "Backing up entire server.",
 		DefaultMessageCompleteBackupFinished: "Backup complete.",
 		UpdateURL:                            "https://raw.githubusercontent.com/msmhq/msm/master",
+		CronMSMBinary:                        "/usr/local/bin/msm",
+		CronMaintenanceHour:                  5,
+		CronArchiveRetentionDays:             30,
 	}
 
 	file, err := os.Open(path)
@@ -236,6 +243,12 @@ func (c *Config) set(key, value string) {
 		c.DefaultMessageCompleteBackupFinished = value
 	case "UPDATE_URL":
 		c.UpdateURL = value
+	case "CRON_MSM_BINARY":
+		c.CronMSMBinary = value
+	case "CRON_MAINTENANCE_HOUR":
+		parseIntConfig(key, value, &c.CronMaintenanceHour)
+	case "CRON_ARCHIVE_RETENTION_DAYS":
+		parseIntConfig(key, value, &c.CronArchiveRetentionDays)
 	}
 }
 

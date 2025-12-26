@@ -6,29 +6,32 @@ A command-line tool for managing multiple Minecraft servers on a single machine.
 
 ## Installation
 
-### Pre-built Binaries
+### From Source (Recommended)
 
-Download the latest release for your platform from the [releases page](https://github.com/msmhq/msm/releases).
-
-```bash
-# Linux (amd64)
-curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o /usr/local/bin/msm
-chmod +x /usr/local/bin/msm
-
-# macOS (arm64)
-curl -L https://github.com/msmhq/msm/releases/latest/download/msm-darwin-arm64 -o /usr/local/bin/msm
-chmod +x /usr/local/bin/msm
-```
-
-### From Source
-
-Requires Go 1.21 or later.
+Requires Go 1.21 or later. This method installs the binary, default config, and cron job automatically.
 
 ```bash
 git clone https://github.com/msmhq/msm.git
 cd msm
 make build
 sudo make install
+```
+
+### Pre-built Binaries
+
+Download the latest release for your platform from the [releases page](https://github.com/msmhq/msm/releases).
+
+```bash
+# Linux (amd64)
+sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o /usr/local/bin/msm
+sudo chmod +x /usr/local/bin/msm
+
+# macOS (arm64)
+sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-darwin-arm64 -o /usr/local/bin/msm
+sudo chmod +x /usr/local/bin/msm
+
+# Install default config and cron job
+sudo msm cron install
 ```
 
 ### Shell Completion
@@ -74,15 +77,31 @@ The Go rewrite maintains full compatibility with existing MSM configurations.
    msm stop --now
    ```
 
-3. **Install the new binary** (see Installation above)
+3. **Clone and build:**
+   ```bash
+   git clone https://github.com/msmhq/msm.git
+   cd msm
+   make build
+   ```
 
-4. **Verify configuration:**
+4. **Remove old bash MSM remnants:**
+   ```bash
+   sudo make migrate
+   ```
+   This removes `/etc/init.d/msm` and related init.d symlinks.
+
+5. **Install the new binary:**
+   ```bash
+   sudo make install
+   ```
+
+6. **Verify configuration:**
    ```bash
    msm config
    msm server list
    ```
 
-5. **Start your servers:**
+7. **Start your servers:**
    ```bash
    msm start
    ```
@@ -197,6 +216,9 @@ The original bash MSM required a cron job (`/etc/cron.d/msm`) for periodic synci
 | `msm restart [--now]` | Restart all servers |
 | `msm config` | Display global configuration |
 | `msm version` | Print version number |
+| `msm cron generate` | Output cron file based on config |
+| `msm cron install` | Install cron file to /etc/cron.d/msm |
+| `msm logroll [--all]` | Archive server logs |
 
 ### Server Commands
 
@@ -214,7 +236,6 @@ The original bash MSM required a cron job (`/etc/cron.d/msm`) for periodic synci
 | `msm cmd <server> <command>` | Send command to console |
 | `msm say <server> <message>` | Broadcast message |
 | `msm kick <server> <player> [reason]` | Kick a player |
-| `msm logroll <server>` | Archive server logs |
 | `msm config <server> [key] [value]` | Show/set server config |
 | `msm backup <server>` | Full server backup |
 
@@ -226,8 +247,8 @@ The original bash MSM required a cron job (`/etc/cron.d/msm`) for periodic synci
 | `msm worlds on <server> <world>` | Activate a world |
 | `msm worlds off <server> <world>` | Deactivate a world |
 | `msm worlds ram <server> <world>` | Toggle RAM disk state |
-| `msm worlds todisk <server>` | Sync RAM worlds to disk |
-| `msm worlds backup <server>` | Backup all worlds |
+| `msm worlds todisk [server] [--all]` | Sync RAM worlds to disk |
+| `msm worlds backup [server] [--all]` | Backup all worlds |
 
 ### Player Commands
 
@@ -284,6 +305,11 @@ RAMDISK_STORAGE_PATH="/dev/shm/msm"
 DEFAULT_RAM="1024"
 DEFAULT_STOP_DELAY="10"
 DEFAULT_RESTART_DELAY="10"
+
+# Cron schedule (regenerate with: sudo msm cron install)
+CRON_MSM_BINARY="/usr/local/bin/msm"
+CRON_MAINTENANCE_HOUR="5"
+CRON_ARCHIVE_RETENTION_DAYS="30"
 ```
 
 ### Per-server configuration
