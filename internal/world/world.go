@@ -50,11 +50,12 @@ func discoverInDir(serverPath, serverName, storagePath string, active bool, cfg 
 
 	var worlds []*World
 	for _, entry := range entries {
-		if !entry.IsDir() {
+		worldPath := filepath.Join(fullPath, entry.Name())
+
+		info, err := os.Stat(worldPath)
+		if err != nil || !info.IsDir() {
 			continue
 		}
-
-		worldPath := filepath.Join(fullPath, entry.Name())
 		world := &World{
 			Name:       entry.Name(),
 			Path:       worldPath,
