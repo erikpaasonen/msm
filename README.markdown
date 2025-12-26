@@ -338,6 +338,12 @@ A background sync daemon automatically syncs RAM to disk every 10 minutes while 
 
 **Warning:** In case of unexpected shutdown, you may lose up to 10 minutes of changes.
 
+### Why worldstorage/?
+
+MSM stores worlds in a `worldstorage/` subdirectory and creates symlinks on server start. This indirection enables RAM disk support—when you enable RAM for a world, MSM symlinks it to `/dev/shm` instead of the local directory. Without this architecture, RAM disk wouldn't be possible.
+
+See [IMPORTING.md](IMPORTING.md) for details on how MSM handles world storage.
+
 ## Fabric Mod Loader
 
 MSM natively supports [Fabric](https://fabricmc.net/):

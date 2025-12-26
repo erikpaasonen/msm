@@ -64,7 +64,7 @@ Ensure the jar version matches your world. Older worlds may need older Minecraft
 
 ## World not loading (new random world generated)
 
-MSM stores worlds in `worldstorage/` and creates symlinks on start.
+MSM stores worlds in `worldstorage/` and creates symlinks on start. This architecture is required for [RAM disk support](README.markdown#ram-disk-support)—see [IMPORTING.md](IMPORTING.md#how-msm-handles-worlds) for details.
 
 ### Checklist
 

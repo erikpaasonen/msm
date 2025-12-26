@@ -107,7 +107,12 @@ When you run `msm start`:
 3. Creates a symlink from the server directory to worldstorage
 4. Minecraft follows the symlink and loads your world
 
-This design enables:
+### Why this architecture?
+
+**This design is required for RAM disk support.** When you enable RAM for a world (`msm worlds ram <server> <world>`), MSM copies the world to `/dev/shm` and symlinks to it there. This dramatically reduces I/O latency for busy servers.
+
+The `worldstorage/` indirection makes this possible—without it, there would be no clean way to swap between disk and RAM storage.
+
+Additional benefits:
 - Multiple worlds per server (swap by changing `level-name`)
-- RAM disk support (symlink to `/dev/shm` instead)
 - Clean separation of config and world data
