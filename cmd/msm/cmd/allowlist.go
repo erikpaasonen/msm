@@ -1,0 +1,219 @@
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/msmhq/msm/internal/player"
+	"github.com/msmhq/msm/internal/server"
+	"github.com/spf13/cobra"
+)
+
+var allowlistCmd = &cobra.Command{
+	Use:     "allowlist <server>",
+	Aliases: []string{"al"},
+	Short:   "Allowlist management commands",
+	Args:    cobra.MinimumNArgs(1),
+}
+
+var allowlistOnCmd = &cobra.Command{
+	Use:   "on <server>",
+	Short: "Enable the allowlist",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		if !s.IsRunning() {
+			return fmt.Errorf("server %q is not running", serverName)
+		}
+
+		if err := s.SendCommand("whitelist on"); err != nil {
+			return err
+		}
+
+		fmt.Printf("Allowlist enabled for server %q\n", serverName)
+		return nil
+	},
+}
+
+var allowlistOffCmd = &cobra.Command{
+	Use:   "off <server>",
+	Short: "Disable the allowlist",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		if !s.IsRunning() {
+			return fmt.Errorf("server %q is not running", serverName)
+		}
+
+		if err := s.SendCommand("whitelist off"); err != nil {
+			return err
+		}
+
+		fmt.Printf("Allowlist disabled for server %q\n", serverName)
+		return nil
+	},
+}
+
+var allowlistAddCmd = &cobra.Command{
+	Use:   "add <server> <player>...",
+	Short: "Add players to the allowlist",
+	Args:  cobra.MinimumNArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+		players := args[1:]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		for _, p := range players {
+			if err := player.AddToAllowlist(s.AllowlistPath(), p); err != nil {
+				fmt.Printf("Failed to add %q: %v\n", p, err)
+				continue
+			}
+
+			if s.IsRunning() {
+				s.SendCommand(fmt.Sprintf("whitelist add %s", p))
+			}
+
+			fmt.Printf("Added %q to allowlist\n", p)
+		}
+
+		return nil
+	},
+}
+
+var allowlistRemoveCmd = &cobra.Command{
+	Use:   "remove <server> <player>...",
+	Short: "Remove players from the allowlist",
+	Args:  cobra.MinimumNArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+		players := args[1:]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		for _, p := range players {
+			if err := player.RemoveFromAllowlist(s.AllowlistPath(), p); err != nil {
+				fmt.Printf("Failed to remove %q: %v\n", p, err)
+				continue
+			}
+
+			if s.IsRunning() {
+				s.SendCommand(fmt.Sprintf("whitelist remove %s", p))
+			}
+
+			fmt.Printf("Removed %q from allowlist\n", p)
+		}
+
+		return nil
+	},
+}
+
+var allowlistListCmd = &cobra.Command{
+	Use:   "list <server>",
+	Short: "List all players on the allowlist",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		entries, err := player.LoadAllowlist(s.AllowlistPath())
+		if err != nil {
+			return err
+		}
+
+		if len(entries) == 0 {
+			fmt.Println("Allowlist is empty.")
+			return nil
+		}
+
+		fmt.Printf("Allowlist for server %q:\n", serverName)
+		for _, e := range entries {
+			fmt.Printf("  %s\n", e.Name)
+		}
+
+		return nil
+	},
+}
+
+var opCmd = &cobra.Command{
+	Use:   "op <server> <player>",
+	Short: "Make a player an operator",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName, playerName := args[0], args[1]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		if err := player.AddOp(s.OpsPath(), playerName, 4); err != nil {
+			return err
+		}
+
+		if s.IsRunning() {
+			s.SendCommand(fmt.Sprintf("op %s", playerName))
+		}
+
+		fmt.Printf("Made %q an operator on server %q\n", playerName, serverName)
+		return nil
+	},
+}
+
+var deopCmd = &cobra.Command{
+	Use:   "deop <server> <player>",
+	Short: "Remove operator status from a player",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName, playerName := args[0], args[1]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		if err := player.RemoveOp(s.OpsPath(), playerName); err != nil {
+			return err
+		}
+
+		if s.IsRunning() {
+			s.SendCommand(fmt.Sprintf("deop %s", playerName))
+		}
+
+		fmt.Printf("Removed operator status from %q on server %q\n", playerName, serverName)
+		return nil
+	},
+}
+
+func init() {
+	allowlistCmd.AddCommand(allowlistOnCmd)
+	allowlistCmd.AddCommand(allowlistOffCmd)
+	allowlistCmd.AddCommand(allowlistAddCmd)
+	allowlistCmd.AddCommand(allowlistRemoveCmd)
+	allowlistCmd.AddCommand(allowlistListCmd)
+
+	rootCmd.AddCommand(allowlistCmd)
+	rootCmd.AddCommand(opCmd)
+	rootCmd.AddCommand(deopCmd)
+}

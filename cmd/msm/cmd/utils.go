@@ -1,0 +1,184 @@
+package cmd
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/msmhq/msm/internal/log"
+	"github.com/msmhq/msm/internal/server"
+	"github.com/spf13/cobra"
+)
+
+var logrollCmd = &cobra.Command{
+	Use:   "logroll <server>",
+	Short: "Roll (archive) server logs",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		return log.Roll(s.LogPath(), cfg.LogArchivePath, serverName)
+	},
+}
+
+var serverConfigCmd = &cobra.Command{
+	Use:   "config <server> [key] [value]",
+	Short: "Show or set server configuration",
+	Args:  cobra.RangeArgs(1, 3),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		if len(args) == 1 {
+			fmt.Printf("Server %q configuration:\n", serverName)
+			fmt.Printf("  Path: %s\n", s.Path)
+			fmt.Printf("  Username: %s\n", s.Config.Username)
+			fmt.Printf("  Screen Name: %s\n", s.Config.ScreenName)
+			fmt.Printf("  Jar Path: %s\n", s.Config.JarPath)
+			fmt.Printf("  RAM: %d MB\n", s.Config.RAM)
+			fmt.Printf("  Stop Delay: %d seconds\n", s.Config.StopDelay)
+			fmt.Printf("  Restart Delay: %d seconds\n", s.Config.RestartDelay)
+			fmt.Printf("  World Storage: %s\n", s.Config.WorldStoragePath)
+			fmt.Printf("  Inactive World Storage: %s\n", s.Config.WorldStorageInactivePath)
+			return nil
+		}
+
+		if len(args) == 2 {
+			key := args[1]
+			switch key {
+			case "username":
+				fmt.Println(s.Config.Username)
+			case "screen_name":
+				fmt.Println(s.Config.ScreenName)
+			case "jar_path":
+				fmt.Println(s.Config.JarPath)
+			case "ram":
+				fmt.Println(s.Config.RAM)
+			case "stop_delay":
+				fmt.Println(s.Config.StopDelay)
+			case "restart_delay":
+				fmt.Println(s.Config.RestartDelay)
+			case "world_storage_path":
+				fmt.Println(s.Config.WorldStoragePath)
+			case "world_storage_inactive_path":
+				fmt.Println(s.Config.WorldStorageInactivePath)
+			default:
+				return fmt.Errorf("unknown config key: %s", key)
+			}
+			return nil
+		}
+
+		key := args[1]
+		value := args[2]
+
+		confPath := filepath.Join(s.Path, "server.conf")
+
+		file, err := os.OpenFile(confPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open config file: %w", err)
+		}
+		defer file.Close()
+
+		configKey := ""
+		switch key {
+		case "username":
+			configKey = "USERNAME"
+		case "screen_name":
+			configKey = "SCREEN_NAME"
+		case "jar_path":
+			configKey = "JAR_PATH"
+		case "ram":
+			configKey = "RAM"
+		case "stop_delay":
+			configKey = "STOP_DELAY"
+		case "restart_delay":
+			configKey = "RESTART_DELAY"
+		case "world_storage_path":
+			configKey = "WORLD_STORAGE_PATH"
+		case "world_storage_inactive_path":
+			configKey = "WORLD_STORAGE_INACTIVE_PATH"
+		default:
+			return fmt.Errorf("unknown config key: %s", key)
+		}
+
+		if _, err := fmt.Fprintf(file, "%s=\"%s\"\n", configKey, value); err != nil {
+			return fmt.Errorf("failed to write config: %w", err)
+		}
+
+		fmt.Printf("Set %s=%s for server %q\n", key, value, serverName)
+		return nil
+	},
+}
+
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update MSM to the latest version",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		noScripts, _ := cmd.Flags().GetBool("no-scripts")
+
+		fmt.Println("Checking for updates...")
+
+		if noScripts {
+			fmt.Println("Skipping script update (--no-scripts specified)")
+			return nil
+		}
+
+		versionURL := cfg.UpdateURL + "/versioning/versions.txt"
+		resp, err := http.Get(versionURL)
+		if err != nil {
+			return fmt.Errorf("failed to check for updates: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to check for updates: status %d", resp.StatusCode)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Available versions:\n%s\n", string(body))
+		fmt.Println("MSM Go rewrite - update functionality is simplified")
+		fmt.Println("Download new binaries from the releases page")
+
+		return nil
+	},
+}
+
+var helpCmd = &cobra.Command{
+	Use:   "help [command]",
+	Short: "Display help for MSM commands",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return rootCmd.Help()
+		}
+
+		targetCmd, _, err := rootCmd.Find(args)
+		if err != nil {
+			return fmt.Errorf("unknown command: %s", args[0])
+		}
+
+		return targetCmd.Help()
+	},
+}
+
+func init() {
+	updateCmd.Flags().Bool("no-scripts", false, "Skip updating scripts")
+
+	rootCmd.AddCommand(logrollCmd)
+	rootCmd.AddCommand(serverConfigCmd)
+	rootCmd.AddCommand(updateCmd)
+}

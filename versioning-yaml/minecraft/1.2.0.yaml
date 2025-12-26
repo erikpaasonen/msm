@@ -1,0 +1,103 @@
+properties:
+  log_path: "server.log"
+
+events:
+  REGEX:
+    output:
+      - "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} \\[.*\\]"
+  START:
+    output:
+      - "Done"
+    timeout: 30
+
+commands:
+  WHITELIST_ON:
+    pattern: "whitelist on"
+  WHITELIST_OFF:
+    pattern: "whitelist off"
+  WHITELIST_ADD:
+    pattern: "whitelist add <player>"
+  WHITELIST_REMOVE:
+    pattern: "whitelist remove <player>"
+  WHITELIST_LIST:
+    pattern: "whitelist list"
+  WHITELIST_RELOAD:
+    pattern: "whitelist reload"
+
+  BLACKLIST_PLAYER_ADD:
+    pattern: "ban <player>"
+  BLACKLIST_PLAYER_REMOVE:
+    pattern: "pardon <player>"
+  BLACKLIST_PLAYER_LIST:
+    pattern: "banlist"
+  BLACKLIST_IP_ADD:
+    pattern: "ban-ip <address>"
+  BLACKLIST_IP_REMOVE:
+    pattern: "pardon-ip <address>"
+  BLACKLIST_IP_LIST:
+    pattern: "banlist ips"
+
+  OP_ADD:
+    pattern: "op <player>"
+  OP_REMOVE:
+    pattern: "deop <player>"
+
+  GAMEMODE:
+    pattern: "gamemode <player> <mode>"
+    output:
+      - "CONSOLE: Setting <player> to game mode (1|0)"
+      - "Can't find user <player>"
+      - "<player> already has game mode (1|0)"
+  KICK:
+    pattern: "kick <player>"
+    output:
+      - "CONSOLE: Kicking <player>"
+      - "Can't find user <player>"
+  SAY:
+    pattern: "say <message>"
+  TOGGLEDOWNFALL:
+    pattern: "toggledownfall"
+    output:
+      - "CONSOLE: Toggling downfall (on|off) for world"
+      - "No world exists with the name"
+  GIVE:
+    pattern: "give <player> <item> <amount> <damage>"
+    output:
+      - "CONSOLE: Giving <player> some .+ (.+)"
+      - "Can't find user <player>"
+      - "There's no item called <item>"
+  XP:
+    pattern: "xp <player> <amount>"
+    output:
+      - "CONSOLE: Giving <amount> exp to <player>"
+      - "Can't find user <player>"
+      - "Invalid exp count: <amount>"
+  CONNECTED:
+    pattern: "list"
+    output:
+      - "Connected players:"
+
+  TIME_SET:
+    pattern: "time set <time>"
+    output:
+      - "CONSOLE: Set time to <time>"
+      - "Unable to convert time value"
+  TIME_ADD:
+    pattern: "time add <time>"
+    output:
+      - "CONSOLE: Added <time> to time"
+      - "Unable to convert time value"
+
+  SAVE_ON:
+    pattern: "save-on"
+    output:
+      - "CONSOLE: Enabling level saving.."
+  SAVE_OFF:
+    pattern: "save-off"
+    output:
+      - "CONSOLE: Disabling level saving.."
+  SAVE_ALL:
+    pattern: "save-all"
+    output:
+      - "CONSOLE: Save complete."
+    timeout: 10

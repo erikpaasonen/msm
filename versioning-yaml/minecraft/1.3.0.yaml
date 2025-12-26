@@ -1,0 +1,69 @@
+extends: minecraft/1.2.0
+
+commands:
+  GAMEMODE:
+    pattern: "gamemode <mode> <player>"
+    output:
+      - "That player cannot be found"
+      - "The number you have entered (<mode>) is too big, it must be at most 2"
+      - "The number you have entered (<mode>) is too small, it must be at least 0"
+      - "'<mode>' is not a valid number"
+
+  KICK:
+    pattern: "kick <player>"
+    output:
+      - "Kicked <player> from the game"
+      - "That player cannot be found"
+
+  TIME_SET:
+    pattern: "time set <time>"
+    output:
+      - "Set the time to <time>"
+      - "The number you have entered (<time>) is too small, it must be at least 0"
+      - "'<time>' is not a valid number"
+  TIME_ADD:
+    pattern: "time add <time>"
+    output:
+      - "Added <time> to the time"
+      - "The number you have entered (<time>) is too small, it must be at least 0"
+      - "'<time>' is not a valid number"
+
+  TOGGLEDOWNFALL:
+    pattern: "toggledownfall"
+    output:
+      - "Toggled downfall"
+
+  GIVE:
+    pattern: "give <player> <item> <amount> <damage>"
+    output:
+      - "Given .+ (ID <item>) \\* <amount> to <player>"
+      - "That player cannot be found"
+      - "'<item>' is not a valid number"
+
+  XP:
+    pattern: "xp <amount> <player>"
+    output:
+      - "Given <amount> experience to <player>"
+      - "That player cannot be found"
+      - "'<amount>' is not a valid number"
+      - "The number you have entered (<amount>) is too small, it must be at least 0"
+
+  CONNECTED:
+    pattern: "list"
+    output:
+      - "([^\\ ]*)?(, [^\\ ]+)*$"
+      - "$"
+
+  SAVE_ON:
+    pattern: "save-on"
+    output:
+      - "Turned on world auto-saving"
+  SAVE_OFF:
+    pattern: "save-off"
+    output:
+      - "Turned off world auto-saving"
+  SAVE_ALL:
+    pattern: "save-all"
+    output:
+      - "Saved the world"
+    timeout: 10
