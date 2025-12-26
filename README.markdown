@@ -93,24 +93,18 @@ For multi-user setups where multiple people manage their own servers, see [PERMI
 
 Download from the [releases page](https://github.com/msmhq/msm/releases).
 
-**Trade-off:** Pre-built binaries skip the build step but require manual setup. If you have Go installed, building from source is easier because `make setup` and `make install` handle everything.
-
 ```bash
 # Download binary (Linux amd64 example)
 sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o /usr/local/bin/msm
 sudo chmod +x /usr/local/bin/msm
 
-# Download config
-sudo curl -L https://raw.githubusercontent.com/msmhq/msm/main/msm.conf -o /etc/msm.conf
+# Clone repo for config and setup scripts
+git clone https://github.com/msmhq/msm.git
+cd msm
 
-# Create minecraft user and directories
-sudo groupadd minecraft
-sudo useradd --system --home-dir /opt/msm --shell /bin/bash --gid minecraft minecraft
-sudo mkdir -p /opt/msm/{servers,jars,versioning,archives/{worlds,logs,backups},fabric}
-sudo chown -R minecraft:minecraft /opt/msm
-sudo chmod 2775 /opt/msm/servers
-
-# Install cron job
+# Set up user, directories, config, and cron
+sudo make setup
+sudo make install-config
 sudo msm cron install
 ```
 

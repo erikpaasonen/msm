@@ -1,4 +1,4 @@
-.PHONY: build clean install go-install test fmt lint migrate setup systemd-install systemd-uninstall
+.PHONY: build clean install install-config go-install test fmt lint migrate setup systemd-install systemd-uninstall
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS := -ldflags "-X github.com/msmhq/msm/cmd/msm/cmd.Version=$(VERSION)"
@@ -32,6 +32,15 @@ uninstall:
 	rm -f $(PREFIX)/bin/msm
 	rm -f /etc/cron.d/msm
 	@echo "Uninstalled msm (config file $(SYSCONFDIR)/msm.conf preserved)"
+
+install-config:
+	@echo "Installing default config to $(SYSCONFDIR)/msm.conf..."
+	@if [ ! -f $(SYSCONFDIR)/msm.conf ]; then \
+		install -m 644 msm.conf $(SYSCONFDIR)/msm.conf; \
+		echo "Created $(SYSCONFDIR)/msm.conf"; \
+	else \
+		echo "$(SYSCONFDIR)/msm.conf already exists, skipping"; \
+	fi
 
 migrate:
 	@echo "Checking for old bash MSM installation..."
