@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/player"
 	"github.com/msmhq/msm/internal/server"
 	"github.com/spf13/cobra"
@@ -80,7 +81,7 @@ var allowlistAddCmd = &cobra.Command{
 
 		for _, p := range players {
 			if err := player.AddToAllowlist(s.AllowlistPath(), p); err != nil {
-				fmt.Printf("Failed to add %q: %v\n", p, err)
+				logging.Error("failed to add player to allowlist", "player", p, "error", err)
 				continue
 			}
 
@@ -88,7 +89,7 @@ var allowlistAddCmd = &cobra.Command{
 				s.SendCommand(fmt.Sprintf("whitelist add %s", p))
 			}
 
-			fmt.Printf("Added %q to allowlist\n", p)
+			logging.Info("added to allowlist", "player", p)
 		}
 
 		return nil
@@ -110,7 +111,7 @@ var allowlistRemoveCmd = &cobra.Command{
 
 		for _, p := range players {
 			if err := player.RemoveFromAllowlist(s.AllowlistPath(), p); err != nil {
-				fmt.Printf("Failed to remove %q: %v\n", p, err)
+				logging.Error("failed to remove player from allowlist", "player", p, "error", err)
 				continue
 			}
 
@@ -118,7 +119,7 @@ var allowlistRemoveCmd = &cobra.Command{
 				s.SendCommand(fmt.Sprintf("whitelist remove %s", p))
 			}
 
-			fmt.Printf("Removed %q from allowlist\n", p)
+			logging.Info("removed from allowlist", "player", p)
 		}
 
 		return nil

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/server"
 	"github.com/msmhq/msm/internal/world"
 	"github.com/spf13/cobra"
@@ -142,18 +143,17 @@ var worldsToDiskCmd = &cobra.Command{
 		synced := 0
 		for _, w := range worlds {
 			if w.InRAM {
-				fmt.Printf("Syncing world %q to disk... ", w.Name)
+				logging.Info("syncing world to disk", "world", w.Name)
 				if err := w.ToDisk(s.Config.Username); err != nil {
-					fmt.Printf("Failed: %v\n", err)
+					logging.Error("failed to sync world", "world", w.Name, "error", err)
 					continue
 				}
-				fmt.Println("Done.")
 				synced++
 			}
 		}
 
 		if synced == 0 {
-			fmt.Println("No RAM worlds to sync.")
+			logging.Info("no RAM worlds to sync")
 		}
 		return nil
 	},
@@ -189,12 +189,12 @@ var worldsBackupCmd = &cobra.Command{
 		for _, w := range worlds {
 			if w.InRAM {
 				if err := w.ToDisk(s.Config.Username); err != nil {
-					fmt.Printf("Warning: failed to sync %q to disk: %v\n", w.Name, err)
+					logging.Warn("failed to sync world to disk", "world", w.Name, "error", err)
 				}
 			}
 
 			if err := w.Backup("", s.Config.Username); err != nil {
-				fmt.Printf("Failed to backup world %q: %v\n", w.Name, err)
+				logging.Error("failed to backup world", "world", w.Name, "error", err)
 			}
 		}
 
@@ -232,7 +232,7 @@ var serverBackupCmd = &cobra.Command{
 		for _, w := range worlds {
 			if w.InRAM {
 				if err := w.ToDisk(s.Config.Username); err != nil {
-					fmt.Printf("Warning: failed to sync %q to disk: %v\n", w.Name, err)
+					logging.Warn("failed to sync world to disk", "world", w.Name, "error", err)
 				}
 			}
 		}

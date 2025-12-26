@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/player"
 	"github.com/msmhq/msm/internal/server"
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ var blocklistPlayerAddCmd = &cobra.Command{
 
 		for _, p := range players {
 			if err := player.BanPlayer(s.BannedPlayersPath(), p, reason); err != nil {
-				fmt.Printf("Failed to ban %q: %v\n", p, err)
+				logging.Error("failed to ban player", "player", p, "error", err)
 				continue
 			}
 
@@ -48,7 +49,7 @@ var blocklistPlayerAddCmd = &cobra.Command{
 				}
 			}
 
-			fmt.Printf("Banned player %q\n", p)
+			logging.Info("banned player", "player", p)
 		}
 
 		return nil
@@ -70,7 +71,7 @@ var blocklistPlayerRemoveCmd = &cobra.Command{
 
 		for _, p := range players {
 			if err := player.UnbanPlayer(s.BannedPlayersPath(), p); err != nil {
-				fmt.Printf("Failed to unban %q: %v\n", p, err)
+				logging.Error("failed to unban player", "player", p, "error", err)
 				continue
 			}
 
@@ -78,7 +79,7 @@ var blocklistPlayerRemoveCmd = &cobra.Command{
 				s.SendCommand(fmt.Sprintf("pardon %s", p))
 			}
 
-			fmt.Printf("Unbanned player %q\n", p)
+			logging.Info("unbanned player", "player", p)
 		}
 
 		return nil
@@ -141,7 +142,7 @@ var blocklistIPAddCmd = &cobra.Command{
 
 		for _, ip := range ips {
 			if err := player.BanIP(s.BannedIPsPath(), ip, reason); err != nil {
-				fmt.Printf("Failed to ban IP %q: %v\n", ip, err)
+				logging.Error("failed to ban IP", "ip", ip, "error", err)
 				continue
 			}
 
@@ -153,7 +154,7 @@ var blocklistIPAddCmd = &cobra.Command{
 				}
 			}
 
-			fmt.Printf("Banned IP %q\n", ip)
+			logging.Info("banned IP", "ip", ip)
 		}
 
 		return nil
@@ -175,7 +176,7 @@ var blocklistIPRemoveCmd = &cobra.Command{
 
 		for _, ip := range ips {
 			if err := player.UnbanIP(s.BannedIPsPath(), ip); err != nil {
-				fmt.Printf("Failed to unban IP %q: %v\n", ip, err)
+				logging.Error("failed to unban IP", "ip", ip, "error", err)
 				continue
 			}
 
@@ -183,7 +184,7 @@ var blocklistIPRemoveCmd = &cobra.Command{
 				s.SendCommand(fmt.Sprintf("pardon-ip %s", ip))
 			}
 
-			fmt.Printf("Unbanned IP %q\n", ip)
+			logging.Info("unbanned IP", "ip", ip)
 		}
 
 		return nil

@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/msmhq/msm/internal/config"
+	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/server"
 	"github.com/spf13/cobra"
 )
@@ -14,6 +14,7 @@ const Version = "0.12.0"
 var (
 	cfg     *config.Config
 	cfgFile string
+	verbose bool
 )
 
 var rootCmd = &cobra.Command{
@@ -25,6 +26,8 @@ for running multiple Minecraft servers on a single machine.
 It provides unified management including server lifecycle control,
 world backups, RAM disk caching, and player management.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		logging.Init(verbose)
+
 		if cmd.Name() == "version" || cmd.Name() == "help" {
 			return nil
 		}
@@ -57,9 +60,9 @@ var startCmd = &cobra.Command{
 
 		for _, s := range servers {
 			if err := s.Start(); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to start server %s: %v\n", s.Name, err)
+				logging.Error("failed to start server", "server", s.Name, "error", err)
 			} else {
-				fmt.Printf("Started server %s\n", s.Name)
+				logging.Info("started server", "server", s.Name)
 			}
 		}
 		return nil
@@ -79,9 +82,9 @@ var stopCmd = &cobra.Command{
 
 		for _, s := range servers {
 			if err := s.Stop(now); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to stop server %s: %v\n", s.Name, err)
+				logging.Error("failed to stop server", "server", s.Name, "error", err)
 			} else {
-				fmt.Printf("Stopped server %s\n", s.Name)
+				logging.Info("stopped server", "server", s.Name)
 			}
 		}
 		return nil
@@ -101,9 +104,9 @@ var restartCmd = &cobra.Command{
 
 		for _, s := range servers {
 			if err := s.Restart(now); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to restart server %s: %v\n", s.Name, err)
+				logging.Error("failed to restart server", "server", s.Name, "error", err)
 			} else {
-				fmt.Printf("Restarted server %s\n", s.Name)
+				logging.Info("restarted server", "server", s.Name)
 			}
 		}
 		return nil
@@ -121,6 +124,7 @@ var configCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/msm.conf)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose/debug output")
 
 	stopCmd.Flags().Bool("now", false, "Stop immediately without warning players")
 	restartCmd.Flags().Bool("now", false, "Restart immediately without warning players")
