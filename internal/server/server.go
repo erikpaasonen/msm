@@ -259,6 +259,19 @@ func (s *Server) OpsPath() string {
 	return s.FullPath(s.Config.OpsPath)
 }
 
+func (s *Server) CanManage() bool {
+	return screen.CanManageUser(s.Config.Username)
+}
+
+func (s *Server) CheckPermission() error {
+	if s.CanManage() {
+		return nil
+	}
+	currentUser := screen.CurrentUser()
+	return fmt.Errorf("permission denied: server %q is owned by user %q\n  You are running as %q\n  Hint: Run with sudo, or as user %q",
+		s.Name, s.Config.Username, currentUser, s.Config.Username)
+}
+
 func (s *Server) DetectMCVersion() (string, error) {
 	if s.Config.MCVersion != "" {
 		return s.Config.MCVersion, nil

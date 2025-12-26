@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/msmhq/msm/internal/fabric"
 	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/world"
+	"github.com/msmhq/msm/pkg/screen"
 )
 
 func (s *Server) IsRunning() bool {
@@ -19,6 +21,10 @@ func (s *Server) IsRunning() bool {
 }
 
 func (s *Server) Start() error {
+	if err := s.CheckPermission(); err != nil {
+		return err
+	}
+
 	if s.IsRunning() {
 		return fmt.Errorf("server %q is already running", s.Name)
 	}
@@ -127,6 +133,10 @@ func (s *Server) SetupRAMWorlds() error {
 }
 
 func (s *Server) Stop(immediate bool) error {
+	if err := s.CheckPermission(); err != nil {
+		return err
+	}
+
 	if !s.IsRunning() {
 		return nil
 	}
@@ -178,6 +188,10 @@ func (s *Server) maybeStopSyncDaemon() {
 }
 
 func (s *Server) Restart(immediate bool) error {
+	if err := s.CheckPermission(); err != nil {
+		return err
+	}
+
 	if s.IsRunning() {
 		if !immediate {
 			delay := s.Config.RestartDelay
@@ -205,6 +219,10 @@ func (s *Server) Status() string {
 }
 
 func (s *Server) Console() error {
+	if err := s.CheckPermission(); err != nil {
+		return err
+	}
+
 	if !s.IsRunning() {
 		return fmt.Errorf("server %q is not running", s.Name)
 	}
@@ -213,6 +231,9 @@ func (s *Server) Console() error {
 }
 
 func (s *Server) SendCommand(cmd string) error {
+	if err := s.CheckPermission(); err != nil {
+		return err
+	}
 	return s.Screen.SendCommandAsUser(cmd, s.Config.Username)
 }
 
@@ -246,6 +267,11 @@ func Create(name string, cfg *config.Config) (*Server, error) {
 		return nil, fmt.Errorf("server %q already exists", name)
 	}
 
+	ownerUsername := cfg.DefaultUsername
+	if !screen.IsRoot() {
+		ownerUsername = screen.CurrentUser()
+	}
+
 	if err := os.MkdirAll(serverPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create server directory: %w", err)
 	}
@@ -260,7 +286,41 @@ func Create(name string, cfg *config.Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to create inactive world storage directory: %w", err)
 	}
 
+	confPath := filepath.Join(serverPath, "server.conf")
+	confContent := fmt.Sprintf("USERNAME=%q\n", ownerUsername)
+	if err := os.WriteFile(confPath, []byte(confContent), 0644); err != nil {
+		return nil, fmt.Errorf("failed to create server.conf: %w", err)
+	}
+
+	if err := setOwnership(serverPath, ownerUsername); err != nil {
+		logging.Warn("failed to set ownership", "path", serverPath, "user", ownerUsername, "error", err)
+	}
+
 	return Load(serverPath, name, cfg)
+}
+
+func setOwnership(path, username string) error {
+	u, err := user.Lookup(username)
+	if err != nil {
+		return fmt.Errorf("user %q not found: %w", username, err)
+	}
+
+	uid, err := strconv.Atoi(u.Uid)
+	if err != nil {
+		return fmt.Errorf("invalid uid: %w", err)
+	}
+
+	gid, err := strconv.Atoi(u.Gid)
+	if err != nil {
+		return fmt.Errorf("invalid gid: %w", err)
+	}
+
+	return filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		return os.Chown(p, uid, gid)
+	})
 }
 
 func Delete(name string, cfg *config.Config) error {
@@ -272,6 +332,10 @@ func Delete(name string, cfg *config.Config) error {
 
 	server, err := Load(serverPath, name, cfg)
 	if err != nil {
+		return err
+	}
+
+	if err := server.CheckPermission(); err != nil {
 		return err
 	}
 
@@ -296,6 +360,10 @@ func Rename(oldName, newName string, cfg *config.Config) error {
 
 	server, err := Load(oldPath, oldName, cfg)
 	if err != nil {
+		return err
+	}
+
+	if err := server.CheckPermission(); err != nil {
 		return err
 	}
 

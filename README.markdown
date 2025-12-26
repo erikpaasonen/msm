@@ -77,13 +77,17 @@ brew install go screen rsync
 Create the minecraft user and directory structure:
 
 ```bash
-# Create system user
-sudo adduser --system --home /opt/msm --shell /bin/bash minecraft
+# Create system user and group
+sudo groupadd minecraft
+sudo adduser --system --home /opt/msm --shell /bin/bash --ingroup minecraft minecraft
 
 # Create directory structure
 sudo mkdir -p /opt/msm/{servers,jars,versioning,archives/{worlds,logs,backups},fabric}
-sudo chown -R minecraft:nogroup /opt/msm
+sudo chown -R minecraft:minecraft /opt/msm
+sudo chmod 2775 /opt/msm/servers  # setgid for multi-user support
 ```
+
+For multi-user setups where multiple people manage their own servers, see [PERMISSIONS.markdown](PERMISSIONS.markdown).
 
 ### From Source (Recommended)
 
@@ -179,6 +183,29 @@ RAM="2048"
 JAR_PATH="paper.jar"
 STOP_DELAY="30"
 ```
+
+## Permissions
+
+MSM enforces ownership-based permissions:
+
+- Each server has an owner (the `USERNAME` in `server.conf`)
+- You can only manage servers you own, unless you're root
+- When you create a server, it's automatically owned by you
+- The systemd service runs as root, so it can start all servers on boot
+
+```bash
+# Alice creates a server (owned by alice)
+alice$ msm server create my-server
+
+# Alice can manage it
+alice$ msm start my-server
+
+# Bob cannot
+bob$ msm stop my-server
+Error: permission denied: server "my-server" is owned by user "alice"
+```
+
+See [PERMISSIONS.markdown](PERMISSIONS.markdown) for the full guide including multi-user setup.
 
 ## Common Commands
 

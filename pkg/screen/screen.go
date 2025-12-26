@@ -158,3 +158,17 @@ func RunAsUserWithOutput(user, command string) (string, error) {
 func IsRoot() bool {
 	return syscall.Getuid() == 0
 }
+
+func CurrentUser() string {
+	return currentUser()
+}
+
+func CanManageUser(targetUser string) bool {
+	if IsRoot() {
+		return true
+	}
+	if targetUser == "" {
+		return true
+	}
+	return currentUser() == targetUser
+}
