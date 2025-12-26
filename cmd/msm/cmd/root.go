@@ -62,7 +62,12 @@ var startCmd = &cobra.Command{
 			if err := s.Start(); err != nil {
 				logging.Error("failed to start server", "server", s.Name, "error", err)
 			} else {
-				logging.Info("started server", "server", s.Name)
+				port := s.Port()
+				if port > 0 {
+					logging.Info("started server", "server", s.Name, "port", port)
+				} else {
+					logging.Info("started server", "server", s.Name)
+				}
 			}
 		}
 		return nil

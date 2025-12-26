@@ -259,6 +259,10 @@ func (s *Server) OpsPath() string {
 	return s.FullPath(s.Config.OpsPath)
 }
 
+func (s *Server) Port() int {
+	return readPortFromProperties(s.PropertiesPath())
+}
+
 func (s *Server) CanManage() bool {
 	return screen.CanManageUser(s.Config.Username)
 }

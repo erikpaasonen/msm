@@ -96,7 +96,11 @@ func serverAction(action string) func(*cobra.Command, []string) error {
 			if err := s.Start(); err != nil {
 				return err
 			}
-			fmt.Printf("Started server %q\n", name)
+			if port := s.Port(); port > 0 {
+				fmt.Printf("Started server %q on port %d\n", name, port)
+			} else {
+				fmt.Printf("Started server %q\n", name)
+			}
 
 		case "stop":
 			if err := s.Stop(now); err != nil {
