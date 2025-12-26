@@ -18,7 +18,7 @@ import (
 )
 
 func (s *Server) IsRunning() bool {
-	return s.Screen.IsRunning()
+	return s.Screen.IsRunningAsUser(s.Config.Username)
 }
 
 func (s *Server) Start() error {

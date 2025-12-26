@@ -19,13 +19,23 @@ func New(name string) *Session {
 }
 
 func (s *Session) IsRunning() bool {
-	cmd := exec.Command("screen", "-ls", s.Name)
+	return s.IsRunningAsUser("")
+}
+
+func (s *Session) IsRunningAsUser(user string) bool {
+	var cmd *exec.Cmd
+	if user != "" && user != currentUser() && IsRoot() {
+		screenCmd := fmt.Sprintf("screen -ls %s", s.Name)
+		cmd = exec.Command("su", "-", user, "-s", "/bin/bash", "-c", screenCmd)
+	} else {
+		cmd = exec.Command("screen", "-ls", s.Name)
+	}
 	output, _ := cmd.Output()
 	return strings.Contains(string(output), s.Name)
 }
 
 func (s *Session) Start(workDir, command string, user string) error {
-	if s.IsRunning() {
+	if s.IsRunningAsUser(user) {
 		return fmt.Errorf("session %q is already running", s.Name)
 	}
 
