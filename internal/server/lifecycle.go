@@ -49,6 +49,10 @@ func (s *Server) Start() error {
 		return fmt.Errorf("jar file not found: %s", jarPath)
 	}
 
+	if err := s.SetupWorldSymlinks(); err != nil {
+		return fmt.Errorf("failed to set up world symlinks: %w", err)
+	}
+
 	if err := s.SetupRAMWorlds(); err != nil {
 		return fmt.Errorf("failed to set up RAM worlds: %w", err)
 	}
@@ -103,6 +107,77 @@ func (s *Server) ResolveFabricJar() (string, error) {
 	}
 
 	return jarPath, nil
+}
+
+func (s *Server) SetupWorldSymlinks() error {
+	levelName := s.getLevelName()
+	if levelName == "" {
+		levelName = "world"
+	}
+
+	worldStoragePath := s.WorldStoragePath()
+	worldInStorage := filepath.Join(worldStoragePath, levelName)
+	symlinkPath := filepath.Join(s.Path, levelName)
+
+	storageInfo, err := os.Stat(worldInStorage)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if !storageInfo.IsDir() {
+		return nil
+	}
+
+	symlinkInfo, err := os.Lstat(symlinkPath)
+	if err == nil {
+		if symlinkInfo.Mode()&os.ModeSymlink != 0 {
+			target, err := os.Readlink(symlinkPath)
+			if err == nil && target == worldInStorage {
+				return nil
+			}
+			if err := os.Remove(symlinkPath); err != nil {
+				return fmt.Errorf("failed to remove existing symlink: %w", err)
+			}
+		} else if symlinkInfo.IsDir() {
+			entries, _ := os.ReadDir(symlinkPath)
+			if len(entries) == 0 {
+				if err := os.Remove(symlinkPath); err != nil {
+					return fmt.Errorf("failed to remove empty world directory: %w", err)
+				}
+			} else {
+				logging.Warn("world directory exists in server root with data, not creating symlink",
+					"path", symlinkPath, "hint", "move contents to worldstorage/"+levelName)
+				return nil
+			}
+		}
+	}
+
+	logging.Debug("creating world symlink", "from", symlinkPath, "to", worldInStorage)
+	if err := os.Symlink(worldInStorage, symlinkPath); err != nil {
+		return fmt.Errorf("failed to create world symlink: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Server) getLevelName() string {
+	propsPath := s.PropertiesPath()
+	file, err := os.Open(propsPath)
+	if err != nil {
+		return "world"
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "level-name=") {
+			return strings.TrimPrefix(line, "level-name=")
+		}
+	}
+	return "world"
 }
 
 func (s *Server) SetupRAMWorlds() error {
