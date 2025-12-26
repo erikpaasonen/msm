@@ -77,6 +77,37 @@ var serverRenameCmd = &cobra.Command{
 	},
 }
 
+var serverInitCmd = &cobra.Command{
+	Use:   "init <name>",
+	Short: "Initialize missing config files for a server",
+	Long: `Initialize missing configuration files for an existing server.
+
+This is useful when importing a world into an existing server directory.
+It will create any missing files:
+  - eula.txt (auto-accepted)
+  - server.properties (with auto-assigned port)
+  - worldstorage directories
+
+Existing files are not overwritten.`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		created, err := server.Init(name, cfg)
+		if err != nil {
+			return err
+		}
+		if len(created) == 0 {
+			fmt.Printf("Server %q already fully initialized\n", name)
+		} else {
+			fmt.Printf("Initialized server %q:\n", name)
+			for _, f := range created {
+				fmt.Printf("  - Created %s\n", f)
+			}
+		}
+		return nil
+	},
+}
+
 func serverAction(action string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
@@ -246,6 +277,7 @@ func init() {
 	serverCmd.AddCommand(serverCreateCmd)
 	serverCmd.AddCommand(serverDeleteCmd)
 	serverCmd.AddCommand(serverRenameCmd)
+	serverCmd.AddCommand(serverInitCmd)
 	serverCmd.AddCommand(serverConfigCmd)
 
 	rootCmd.AddCommand(serverCmd)

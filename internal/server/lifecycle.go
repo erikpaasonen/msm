@@ -380,6 +380,58 @@ white-list=false
 	return os.WriteFile(propsPath, []byte(content), 0644)
 }
 
+func mergeServerProperties(serverPath string, port int, cfg *config.Config) ([]string, error) {
+	propsPath := filepath.Join(serverPath, cfg.DefaultPropertiesPath)
+
+	existing := make(map[string]string)
+	file, err := os.Open(propsPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		lines = append(lines, line)
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		if idx := strings.Index(trimmed, "="); idx != -1 {
+			key := trimmed[:idx]
+			existing[key] = trimmed[idx+1:]
+		}
+	}
+
+	defaults := map[string]string{
+		"server-port":   strconv.Itoa(port),
+		"view-distance": strconv.Itoa(cfg.DefaultRenderDistance),
+		"max-players":   strconv.Itoa(cfg.DefaultMaxPlayers),
+		"difficulty":    cfg.DefaultDifficulty,
+		"gamemode":      cfg.DefaultGamemode,
+		"level-name":    "world",
+	}
+
+	var added []string
+	for key, value := range defaults {
+		if _, exists := existing[key]; !exists {
+			lines = append(lines, fmt.Sprintf("%s=%s", key, value))
+			added = append(added, key)
+		}
+	}
+
+	if len(added) > 0 {
+		content := strings.Join(lines, "\n") + "\n"
+		if err := os.WriteFile(propsPath, []byte(content), 0644); err != nil {
+			return nil, err
+		}
+	}
+
+	return added, nil
+}
+
 func writeEULA(serverPath string) error {
 	eulaPath := filepath.Join(serverPath, "eula.txt")
 	content := `# By using MSM to manage Minecraft servers, you agree to the Minecraft EULA
@@ -434,6 +486,79 @@ func Delete(name string, cfg *config.Config) error {
 	}
 
 	return os.RemoveAll(serverPath)
+}
+
+func Init(name string, cfg *config.Config) ([]string, error) {
+	serverPath := filepath.Join(cfg.ServerStoragePath, name)
+
+	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("server %q not found", name)
+	}
+
+	var created []string
+
+	ownerUsername := cfg.DefaultUsername
+	if !screen.IsRoot() {
+		ownerUsername = screen.CurrentUser()
+	}
+
+	confPath := filepath.Join(serverPath, "server.conf")
+	if _, err := os.Stat(confPath); os.IsNotExist(err) {
+		confContent := fmt.Sprintf("USERNAME=%q\n", ownerUsername)
+		if err := os.WriteFile(confPath, []byte(confContent), 0644); err != nil {
+			return created, fmt.Errorf("failed to create server.conf: %w", err)
+		}
+		created = append(created, "server.conf")
+	}
+
+	propsPath := filepath.Join(serverPath, cfg.DefaultPropertiesPath)
+	if _, err := os.Stat(propsPath); os.IsNotExist(err) {
+		port := findNextAvailablePort(cfg)
+		if err := writeServerProperties(serverPath, port, cfg); err != nil {
+			return created, fmt.Errorf("failed to create server.properties: %w", err)
+		}
+		created = append(created, fmt.Sprintf("server.properties (port %d)", port))
+	} else {
+		port := findNextAvailablePort(cfg)
+		added, err := mergeServerProperties(serverPath, port, cfg)
+		if err != nil {
+			logging.Warn("failed to merge server.properties", "error", err)
+		} else if len(added) > 0 {
+			created = append(created, fmt.Sprintf("server.properties (added: %s)", strings.Join(added, ", ")))
+		}
+	}
+
+	eulaPath := filepath.Join(serverPath, "eula.txt")
+	if _, err := os.Stat(eulaPath); os.IsNotExist(err) {
+		if err := writeEULA(serverPath); err != nil {
+			return created, fmt.Errorf("failed to create eula.txt: %w", err)
+		}
+		created = append(created, "eula.txt")
+	}
+
+	worldStoragePath := filepath.Join(serverPath, cfg.DefaultWorldStoragePath)
+	if _, err := os.Stat(worldStoragePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(worldStoragePath, 0755); err != nil {
+			return created, fmt.Errorf("failed to create world storage directory: %w", err)
+		}
+		created = append(created, cfg.DefaultWorldStoragePath+"/")
+	}
+
+	worldStorageInactivePath := filepath.Join(serverPath, cfg.DefaultWorldStorageInactivePath)
+	if _, err := os.Stat(worldStorageInactivePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(worldStorageInactivePath, 0755); err != nil {
+			return created, fmt.Errorf("failed to create inactive world storage directory: %w", err)
+		}
+		created = append(created, cfg.DefaultWorldStorageInactivePath+"/")
+	}
+
+	if len(created) > 0 {
+		if err := setOwnership(serverPath, ownerUsername); err != nil {
+			logging.Warn("failed to set ownership", "path", serverPath, "user", ownerUsername, "error", err)
+		}
+	}
+
+	return created, nil
 }
 
 func Rename(oldName, newName string, cfg *config.Config) error {

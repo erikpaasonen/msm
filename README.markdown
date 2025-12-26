@@ -316,6 +316,7 @@ msm server list              # List all servers
 msm server create <name>     # Create new server (auto-assigns port)
 msm server delete <name>     # Delete a server
 msm server rename <old> <new>  # Rename a server
+msm server init <name>       # Initialize missing config files (for imported worlds)
 msm server config <server>   # Show per-server configuration
 ```
 
