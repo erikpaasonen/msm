@@ -58,24 +58,3 @@ func Roll(logPath, archivePath, serverName string) error {
 	fmt.Println("Done.")
 	return nil
 }
-
-func CleanOldLogs(archivePath string, maxAgeDays int) error {
-	cutoff := time.Now().AddDate(0, 0, -maxAgeDays)
-
-	return filepath.Walk(archivePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		if info.ModTime().Before(cutoff) {
-			fmt.Printf("Removing old log: %s\n", path)
-			return os.Remove(path)
-		}
-
-		return nil
-	})
-}

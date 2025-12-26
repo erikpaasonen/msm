@@ -1,7 +1,6 @@
 package jar
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"net/http"
@@ -249,23 +248,4 @@ func LinkJar(serverPath, jarPath, jarGroupName, jarFile string, cfg *config.Conf
 	}
 
 	return nil
-}
-
-func ListVersions(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var versions []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line != "" && !strings.HasPrefix(line, "#") {
-			versions = append(versions, line)
-		}
-	}
-
-	return versions, scanner.Err()
 }

@@ -263,6 +263,12 @@ MSM requires a Unix-like environment due to its reliance on:
 - POSIX filesystem semantics
 - `/dev/shm` or equivalent for RAM disk features
 
+### Minecraft Version Support
+
+MSM supports **Minecraft 1.7.0 and later** (Java Edition). This includes all modern versions through the upcoming year-based versioning (e.g., `25.1`).
+
+Servers running Minecraft 1.6.x or earlier are no longer supported. The original bash MSM supported 1.2.0+, but the Go rewrite drops pre-1.7 support to avoid complexity of handling differences in log file location and format.
+
 ### Dependencies
 
 - **GNU screen** (required) - console/process management
