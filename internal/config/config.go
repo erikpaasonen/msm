@@ -70,6 +70,13 @@ type Config struct {
 
 	FabricStoragePath string
 	FabricCacheTTL    int
+
+	DefaultServerPort     int
+	DefaultRenderDistance int
+	DefaultMaxPlayers     int
+	DefaultDifficulty     string
+	DefaultGamemode       string
+	DefaultMOTD           string
 }
 
 func Load(path string) (*Config, error) {
@@ -128,6 +135,12 @@ func Load(path string) (*Config, error) {
 		CronArchiveRetentionDays:             30,
 		FabricStoragePath:                    "/opt/msm/fabric",
 		FabricCacheTTL:                       60,
+		DefaultServerPort:                    25565,
+		DefaultRenderDistance:                12,
+		DefaultMaxPlayers:                    20,
+		DefaultDifficulty:                    "normal",
+		DefaultGamemode:                      "survival",
+		DefaultMOTD:                          "A Minecraft Server",
 	}
 
 	file, err := os.Open(path)
@@ -258,6 +271,18 @@ func (c *Config) set(key, value string) {
 		c.FabricStoragePath = value
 	case "FABRIC_CACHE_TTL_MINUTES":
 		parseIntConfig(key, value, &c.FabricCacheTTL)
+	case "DEFAULT_SERVER_PORT":
+		parseIntConfig(key, value, &c.DefaultServerPort)
+	case "DEFAULT_RENDER_DISTANCE":
+		parseIntConfig(key, value, &c.DefaultRenderDistance)
+	case "DEFAULT_MAX_PLAYERS":
+		parseIntConfig(key, value, &c.DefaultMaxPlayers)
+	case "DEFAULT_DIFFICULTY":
+		c.DefaultDifficulty = value
+	case "DEFAULT_GAMEMODE":
+		c.DefaultGamemode = value
+	case "DEFAULT_MOTD":
+		c.DefaultMOTD = value
 	}
 }
 

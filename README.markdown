@@ -35,20 +35,16 @@ MSM supports **Minecraft 1.7.0 and later** (Java Edition), including the new yea
 # 1. Install MSM (see Installation section for details)
 make build && sudo make setup && sudo make install
 
-# 2. Create a server
+# 2. Create a server (auto-configures port, EULA, etc.)
 msm server create survival
 
-# 3. Set up a jar group and download the server jar
-msm jargroup create minecraft https://piston-data.mojang.com/v1/objects/.../server.jar
-msm jargroup getlatest minecraft
+# 3. Download the latest Minecraft server jar
+msm jar download survival
 
-# 4. Link the server to the jar
-msm jar survival minecraft
-
-# 5. Start the server
+# 4. Start the server
 msm start survival
 
-# 6. Attach to console (detach with Ctrl+A, D)
+# 5. Attach to console (detach with Ctrl+A, D)
 msm console survival
 ```
 
@@ -127,6 +123,117 @@ msm config
 - **Log rolling** - Automatic log compression and archival
 - **Console access** - Direct access to server console via screen
 
+## Running Multiple Servers
+
+MSM is designed to run multiple Minecraft servers simultaneously on a single machine. Each MSM "server" is an independent Minecraft instance with its own world, port, and configuration.
+
+### How It Works
+
+| What you create | What you get |
+|-----------------|--------------|
+| `msm server create survival` | Independent server on port 25565 |
+| `msm server create creative` | Independent server on port 25566 |
+| `msm server create skyblock` | Independent server on port 25567 |
+
+When you create a server, MSM automatically:
+- Assigns the next available port (starting from 25565)
+- Generates `server.properties` with sensible defaults
+- Accepts the Minecraft EULA on your behalf
+- Creates the directory structure for worlds
+
+### Starting Multiple Servers
+
+```bash
+# Start all servers at once
+msm start
+
+# Or start individually
+msm start survival
+msm start creative
+
+# Check what's running
+msm server list
+```
+
+Players connect to different servers using their port: `yourhost:25565`, `yourhost:25566`, etc.
+
+### Resource Planning
+
+Each Minecraft server requires its own RAM allocation (configured in `server.conf`). Plan accordingly:
+
+| Servers | RAM Each | Total Needed |
+|---------|----------|--------------|
+| 3 | 2GB | ~8GB (including OS overhead) |
+| 5 | 4GB | ~24GB |
+
+## Importing Existing Worlds
+
+If you have an existing Minecraft world (from single-player or another server), you can import it into MSM.
+
+### From Single-Player
+
+Single-player worlds are stored in your Minecraft saves folder:
+- **Linux**: `~/.minecraft/saves/<world_name>/`
+- **macOS**: `~/Library/Application Support/minecraft/saves/<world_name>/`
+- **Windows**: `%APPDATA%\.minecraft\saves\<world_name>\`
+
+To import:
+
+```bash
+# 1. Create the server
+msm server create survival
+
+# 2. Copy your world into the server's worldstorage directory
+#    The folder MUST be named "world" to match server.properties level-name
+cp -r ~/.minecraft/saves/MyWorld /opt/msm/servers/survival/worldstorage/world
+
+# 3. Fix ownership
+sudo chown -R minecraft:minecraft /opt/msm/servers/survival/worldstorage/
+
+# 4. Download Minecraft and start
+msm jar download survival
+msm start survival
+```
+
+### From Another Server
+
+If migrating from an existing Minecraft server:
+
+```bash
+# 1. Create the MSM server
+msm server create migrated
+
+# 2. Copy the world folder
+cp -r /path/to/old-server/world /opt/msm/servers/migrated/worldstorage/world
+
+# 3. Optionally copy other data
+cp /path/to/old-server/whitelist.json /opt/msm/servers/migrated/
+cp /path/to/old-server/ops.json /opt/msm/servers/migrated/
+
+# 4. Fix ownership, download Minecraft, and start
+sudo chown -R minecraft:minecraft /opt/msm/servers/migrated/
+msm jar download migrated
+msm start migrated
+```
+
+### World Folder Structure
+
+A valid Minecraft world folder contains:
+
+```
+world/
+├── level.dat          # World metadata (required)
+├── region/            # Overworld chunk data
+├── DIM-1/             # Nether (if visited)
+│   └── region/
+├── DIM1/              # The End (if visited)
+│   └── region/
+├── data/              # Map data, raids, etc.
+└── playerdata/        # Player inventories
+```
+
+The folder name must match `level-name` in `server.properties` (default: `world`).
+
 ## Configuration
 
 MSM reads its configuration from `/etc/msm.conf`. Override with `--config` flag or `MSM_CONF` environment variable.
@@ -144,6 +251,13 @@ JAR_STORAGE_PATH="/opt/msm/jars"
 # Server defaults
 DEFAULT_RAM="1024"
 DEFAULT_STOP_DELAY="10"
+
+# Minecraft server.properties defaults (used when creating new servers)
+DEFAULT_SERVER_PORT="25565"
+DEFAULT_RENDER_DISTANCE="12"
+DEFAULT_MAX_PLAYERS="20"
+DEFAULT_DIFFICULTY="normal"
+DEFAULT_GAMEMODE="survival"
 
 # Cron schedule
 CRON_MAINTENANCE_HOUR="5"
@@ -219,7 +333,11 @@ msm kick <server> <player> [reason]
 ### Jar Management
 
 ```bash
-msm jargroup list
+# Simple: download vanilla Minecraft directly
+msm jar download <server>           # Latest version
+msm jar download <server> 1.21.4    # Specific version
+
+# Advanced: jar groups for custom jars (Paper, Spigot, etc.)
 msm jargroup create <name> <url>
 msm jargroup getlatest <name>
 msm jar <server> <jargroup>
