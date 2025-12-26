@@ -71,7 +71,7 @@ func (w *World) ToggleRAM(user string) error {
 		}
 		fmt.Println("Done.")
 
-		fmt.Printf("Copying world to RAM... ", w.Name)
+		fmt.Printf("Copying world %s to RAM... ", w.Name)
 		w.RAMPath = filepath.Join(w.GlobalCfg.RamdiskStoragePath, w.ServerName, w.Name)
 		if err := w.ToRAM(user); err != nil {
 			return err
