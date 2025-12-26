@@ -3,3 +3,6 @@ _*/*
 
 # JetBrains IDE
 .idea
+
+# compiled binary
+msm
