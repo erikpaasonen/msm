@@ -47,6 +47,11 @@ type ServerConfig struct {
 	MessageWorldBackupFinished    string
 	MessageCompleteBackupStarted  string
 	MessageCompleteBackupFinished string
+
+	FabricEnabled          bool
+	FabricLoaderVersion    string
+	FabricInstallerVersion string
+	MCVersion              string
 }
 
 func DiscoverAll(cfg *config.Config) ([]*Server, error) {
@@ -192,6 +197,14 @@ func (c *ServerConfig) set(key, value, serverName string) {
 		c.MessageCompleteBackupStarted = value
 	case "MESSAGE_COMPLETE_BACKUP_FINISHED":
 		c.MessageCompleteBackupFinished = value
+	case "FABRIC_ENABLED":
+		c.FabricEnabled = value == "true"
+	case "FABRIC_LOADER_VERSION":
+		c.FabricLoaderVersion = value
+	case "FABRIC_INSTALLER_VERSION":
+		c.FabricInstallerVersion = value
+	case "MC_VERSION":
+		c.MCVersion = value
 	}
 }
 
@@ -244,4 +257,81 @@ func (s *Server) BannedIPsPath() string {
 
 func (s *Server) OpsPath() string {
 	return s.FullPath(s.Config.OpsPath)
+}
+
+func (s *Server) DetectMCVersion() (string, error) {
+	if s.Config.MCVersion != "" {
+		return s.Config.MCVersion, nil
+	}
+
+	jarPath := s.JarPath()
+	jarName := filepath.Base(jarPath)
+
+	if info, err := os.Lstat(jarPath); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		target, err := os.Readlink(jarPath)
+		if err == nil {
+			jarName = filepath.Base(target)
+		}
+	}
+
+	if version := extractVersionFromFilename(jarName); version != "" {
+		return version, nil
+	}
+
+	return "", fmt.Errorf("could not detect minecraft version for server %q; set MC_VERSION in server.conf", s.Name)
+}
+
+func extractVersionFromFilename(filename string) string {
+	patterns := []struct {
+		prefix string
+		suffix string
+	}{
+		{"minecraft_server.", ".jar"},
+		{"server-", ".jar"},
+		{"paper-", ".jar"},
+		{"spigot-", ".jar"},
+		{"craftbukkit-", ".jar"},
+		{"purpur-", ".jar"},
+		{"fabric-server-mc.", "-loader"},
+	}
+
+	for _, p := range patterns {
+		if idx := strings.Index(filename, p.prefix); idx != -1 {
+			start := idx + len(p.prefix)
+			rest := filename[start:]
+			if endIdx := strings.Index(rest, p.suffix); endIdx != -1 {
+				version := rest[:endIdx]
+				version = strings.TrimSuffix(version, "-SNAPSHOT")
+				if idx := strings.Index(version, "-"); idx != -1 {
+					version = version[:idx]
+				}
+				if isValidVersion(version) {
+					return version
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+func isValidVersion(s string) bool {
+	if len(s) < 3 {
+		return false
+	}
+
+	parts := strings.Split(s, ".")
+	if len(parts) < 2 {
+		return false
+	}
+
+	for _, p := range parts {
+		for _, c := range p {
+			if c < '0' || c > '9' {
+				return false
+			}
+		}
+	}
+
+	return true
 }

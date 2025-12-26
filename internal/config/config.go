@@ -67,6 +67,9 @@ type Config struct {
 	CronMSMBinary            string
 	CronMaintenanceHour      int
 	CronArchiveRetentionDays int
+
+	FabricStoragePath string
+	FabricCacheTTL    int
 }
 
 func Load(path string) (*Config, error) {
@@ -123,6 +126,8 @@ func Load(path string) (*Config, error) {
 		CronMSMBinary:                        "/usr/local/bin/msm",
 		CronMaintenanceHour:                  5,
 		CronArchiveRetentionDays:             30,
+		FabricStoragePath:                    "/opt/msm/fabric",
+		FabricCacheTTL:                       60,
 	}
 
 	file, err := os.Open(path)
@@ -249,6 +254,10 @@ func (c *Config) set(key, value string) {
 		parseIntConfig(key, value, &c.CronMaintenanceHour)
 	case "CRON_ARCHIVE_RETENTION_DAYS":
 		parseIntConfig(key, value, &c.CronArchiveRetentionDays)
+	case "FABRIC_STORAGE_PATH":
+		c.FabricStoragePath = value
+	case "FABRIC_CACHE_TTL_MINUTES":
+		parseIntConfig(key, value, &c.FabricCacheTTL)
 	}
 }
 
@@ -270,6 +279,8 @@ func (c *Config) Print() {
 	fmt.Printf("Default RAM: %d MB\n", c.DefaultRAM)
 	fmt.Printf("Default Stop Delay: %d seconds\n", c.DefaultStopDelay)
 	fmt.Printf("Default Restart Delay: %d seconds\n", c.DefaultRestartDelay)
+	fmt.Printf("Fabric Storage Path: %s\n", c.FabricStoragePath)
+	fmt.Printf("Fabric Cache TTL: %d minutes\n", c.FabricCacheTTL)
 }
 
 func parseIntConfig(key, value string, target *int) {

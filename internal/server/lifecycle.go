@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/msmhq/msm/internal/config"
+	"github.com/msmhq/msm/internal/fabric"
 	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/world"
 )
@@ -22,7 +23,21 @@ func (s *Server) Start() error {
 		return fmt.Errorf("server %q is already running", s.Name)
 	}
 
-	jarPath := s.JarPath()
+	var jarPath string
+	var jarForInvocation string
+
+	if s.Config.FabricEnabled {
+		fabricJar, err := s.ResolveFabricJar()
+		if err != nil {
+			return fmt.Errorf("fabric jar resolution failed: %w", err)
+		}
+		jarPath = fabricJar
+		jarForInvocation = fabricJar
+	} else {
+		jarPath = s.JarPath()
+		jarForInvocation = s.Config.JarPath
+	}
+
 	if _, err := os.Stat(jarPath); os.IsNotExist(err) {
 		return fmt.Errorf("jar file not found: %s", jarPath)
 	}
@@ -33,7 +48,7 @@ func (s *Server) Start() error {
 
 	invocation := s.Config.Invocation
 	invocation = strings.ReplaceAll(invocation, "{RAM}", strconv.Itoa(s.Config.RAM))
-	invocation = strings.ReplaceAll(invocation, "{JAR}", s.Config.JarPath)
+	invocation = strings.ReplaceAll(invocation, "{JAR}", jarForInvocation)
 
 	if err := s.Screen.Start(s.Path, invocation, s.Config.Username); err != nil {
 		return err
@@ -46,6 +61,41 @@ func (s *Server) Start() error {
 	}
 
 	return nil
+}
+
+func (s *Server) ResolveFabricJar() (string, error) {
+	mcVersion, err := s.DetectMCVersion()
+	if err != nil {
+		return "", err
+	}
+
+	client, err := fabric.NewClient(s.GlobalCfg.FabricStoragePath, s.GlobalCfg.FabricCacheTTL)
+	if err != nil {
+		return "", fmt.Errorf("failed to create fabric client: %w", err)
+	}
+
+	loaderVersion := s.Config.FabricLoaderVersion
+	installerVersion := s.Config.FabricInstallerVersion
+
+	loaderVersion, installerVersion, err = client.ResolveVersions(mcVersion, loaderVersion, installerVersion)
+	if err != nil {
+		return "", err
+	}
+
+	jarPath := fabric.JarPath(s.GlobalCfg.FabricStoragePath, mcVersion, loaderVersion, installerVersion)
+
+	if _, err := os.Stat(jarPath); os.IsNotExist(err) {
+		logging.Info("downloading fabric launcher",
+			"mcVersion", mcVersion,
+			"loaderVersion", loaderVersion,
+			"installerVersion", installerVersion)
+		jarPath, err = client.DownloadServerJar(mcVersion, loaderVersion, installerVersion)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return jarPath, nil
 }
 
 func (s *Server) SetupRAMWorlds() error {

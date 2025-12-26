@@ -278,7 +278,73 @@ The original bash MSM required a cron job (`/etc/cron.d/msm`) for periodic synci
 | `msm jargroup rename <old> <new>` | Rename a jar group |
 | `msm jargroup changeurl <name> <url>` | Change jar group URL |
 | `msm jargroup getlatest <name>` | Download latest jar |
-| `msm jar <server> <jargroup> [file]` | Link server to jar |
+| `msm jar <server> <jargroup> [file] [--force]` | Link server to jar |
+
+### Fabric Commands
+
+| Command | Description |
+|---------|-------------|
+| `msm fabric status <server>` | Show Fabric status for server |
+| `msm fabric on <server>` | Enable Fabric for server |
+| `msm fabric off <server>` | Disable Fabric for server |
+| `msm fabric versions [mc-version]` | List available Fabric versions |
+| `msm fabric update <server>` | Download newer Fabric loader |
+| `msm fabric set-loader <server> <version>` | Pin loader version |
+| `msm fabric set-installer <server> <version>` | Pin installer version |
+
+## Fabric Mod Loader Support
+
+MSM supports [Fabric](https://fabricmc.net/), a lightweight mod loader for Minecraft. Fabric runs as a wrapper around the vanilla server, enabling mods while maintaining compatibility.
+
+### How it works
+
+1. **Enable Fabric for a server:**
+   ```bash
+   msm fabric on survival
+   ```
+   This checks that Fabric supports your Minecraft version and enables Fabric mode.
+
+2. **Start the server:**
+   ```bash
+   msm start survival
+   ```
+   MSM automatically downloads the appropriate Fabric launcher JAR (if not cached) and starts the server using Fabric instead of vanilla.
+
+3. **Fabric JARs are cached globally:**
+   Once downloaded, Fabric launcher JARs are stored in `/opt/msm/fabric/jars/` and shared across all servers using the same Minecraft version.
+
+### Version protection
+
+When Fabric is enabled, MSM prevents upgrading to Minecraft versions that Fabric doesn't support yet:
+
+```bash
+$ msm jar survival minecraft-26.1
+Error: fabric does not yet support minecraft 26.1 - upgrade blocked
+  Hint: Use --force to override (may cause issues)
+```
+
+This prevents accidental world corruption from version mismatches. Use `--force` to override if needed.
+
+### Per-server configuration
+
+Add to `<server>/server.conf`:
+
+```bash
+FABRIC_ENABLED="true"
+FABRIC_LOADER_VERSION="0.16.10"      # Optional: pin specific loader
+FABRIC_INSTALLER_VERSION="1.1.0"     # Optional: pin specific installer
+MC_VERSION="1.21.4"                  # Optional: manual version override
+```
+
+### API usage
+
+MSM queries the Fabric Meta API (`meta.fabricmc.net`) only when:
+- Enabling Fabric (`msm fabric on`)
+- Changing Minecraft versions (`msm jar`)
+- Explicitly checking versions (`msm fabric versions`)
+- Updating Fabric (`msm fabric update`)
+
+Normal operations (start, stop, backup) use cached JARs with no network calls.
 
 ## Configuration
 
@@ -310,6 +376,10 @@ DEFAULT_RESTART_DELAY="10"
 CRON_MSM_BINARY="/usr/local/bin/msm"
 CRON_MAINTENANCE_HOUR="5"
 CRON_ARCHIVE_RETENTION_DAYS="30"
+
+# Fabric mod loader
+FABRIC_STORAGE_PATH="/opt/msm/fabric"
+FABRIC_CACHE_TTL_MINUTES="60"
 ```
 
 ### Per-server configuration

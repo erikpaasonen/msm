@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/msmhq/msm/internal/fabric"
 	"github.com/msmhq/msm/internal/jar"
 	"github.com/msmhq/msm/internal/server"
 	"github.com/spf13/cobra"
@@ -133,9 +134,40 @@ var jarCmd = &cobra.Command{
 			jarFile = args[2]
 		}
 
+		force, _ := cmd.Flags().GetBool("force")
+
 		s, err := server.Get(serverName, cfg)
 		if err != nil {
 			return err
+		}
+
+		if s.Config.FabricEnabled && !force {
+			g, err := jar.Get(jargroupName, cfg)
+			if err != nil {
+				return err
+			}
+
+			targetFile := jarFile
+			if targetFile == "" {
+				targetFile = g.LatestFile()
+			}
+
+			newVersion := extractMCVersionFromJarName(targetFile)
+			if newVersion != "" {
+				client, err := fabric.NewClient(cfg.FabricStoragePath, cfg.FabricCacheTTL)
+				if err != nil {
+					return fmt.Errorf("failed to check fabric compatibility: %w", err)
+				}
+
+				supported, err := client.SupportsVersion(newVersion)
+				if err != nil {
+					return fmt.Errorf("failed to check fabric compatibility: %w", err)
+				}
+
+				if !supported {
+					return fmt.Errorf("fabric does not yet support minecraft %s - upgrade blocked\n  Hint: Use --force to override (may cause issues)", newVersion)
+				}
+			}
 		}
 
 		if err := jar.LinkJar(s.Path, s.Config.JarPath, jargroupName, jarFile, cfg); err != nil {
@@ -151,6 +183,46 @@ var jarCmd = &cobra.Command{
 	},
 }
 
+func extractMCVersionFromJarName(filename string) string {
+	patterns := []struct {
+		prefix string
+		suffix string
+	}{
+		{"minecraft_server.", ".jar"},
+		{"server-", ".jar"},
+		{"paper-", ".jar"},
+		{"spigot-", ".jar"},
+		{"craftbukkit-", ".jar"},
+		{"purpur-", ".jar"},
+	}
+
+	for _, p := range patterns {
+		if len(filename) > len(p.prefix)+len(p.suffix) {
+			if filename[:len(p.prefix)] == p.prefix {
+				rest := filename[len(p.prefix):]
+				if idx := len(rest) - len(p.suffix); idx > 0 && rest[idx:] == p.suffix {
+					version := rest[:idx]
+					if idx := indexOf(version, '-'); idx != -1 {
+						version = version[:idx]
+					}
+					return version
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
+func indexOf(s string, c byte) int {
+	for i := 0; i < len(s); i++ {
+		if s[i] == c {
+			return i
+		}
+	}
+	return -1
+}
+
 func init() {
 	jargroupCmd.AddCommand(jargroupListCmd)
 	jargroupCmd.AddCommand(jargroupCreateCmd)
@@ -158,6 +230,8 @@ func init() {
 	jargroupCmd.AddCommand(jargroupRenameCmd)
 	jargroupCmd.AddCommand(jargroupChangeURLCmd)
 	jargroupCmd.AddCommand(jargroupGetLatestCmd)
+
+	jarCmd.Flags().Bool("force", false, "Force jar change even if Fabric doesn't support the new version")
 
 	rootCmd.AddCommand(jargroupCmd)
 	rootCmd.AddCommand(jarCmd)
