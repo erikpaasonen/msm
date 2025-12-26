@@ -53,7 +53,9 @@ Commands that operate on all servers or the MSM system itself.
 | `msm worlds list <server>` | List all worlds for a server |
 | `msm worlds on <server> <world>` | Activate a world |
 | `msm worlds off <server> <world>` | Deactivate a world |
-| `msm worlds ram <server> <world>` | Toggle RAM disk state for a world |
+| `msm worlds ram <server> <world>` | Show RAM disk status for a world |
+| `msm worlds ram on <server> <world>` | Enable RAM disk for a world |
+| `msm worlds ram off <server> <world>` | Disable RAM disk for a world |
 | `msm worlds todisk [server]` | Sync RAM worlds to disk |
 | `msm worlds todisk --all` | Sync all RAM worlds (all servers) |
 | `msm worlds backup [server]` | Backup all worlds for a server |

@@ -324,11 +324,14 @@ msm jar <server> <jargroup>
 Load worlds into RAM (`/dev/shm`) for reduced I/O latency:
 
 ```bash
-# Enable RAM for a world
+# Check RAM status for a world
 msm worlds ram survival world
 
-# Start server (auto-creates symlink to RAM)
-msm start survival
+# Enable RAM for a world
+msm worlds ram on survival world
+
+# Disable RAM for a world
+msm worlds ram off survival world
 
 # Force sync to disk
 msm worlds todisk survival

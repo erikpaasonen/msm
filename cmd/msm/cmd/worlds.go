@@ -98,7 +98,38 @@ var worldsOffCmd = &cobra.Command{
 
 var worldsRAMCmd = &cobra.Command{
 	Use:   "ram <server> <world>",
-	Short: "Toggle RAM disk state for a world",
+	Short: "Show or manage RAM disk state for a world",
+	Long: `Show or manage RAM disk state for a world.
+
+Without a subcommand, shows the current RAM status.
+Use 'ram on' or 'ram off' to change the state.`,
+	Args: cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName, worldName := args[0], args[1]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		w, err := world.Get(s.Path, s.Name, worldName, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath, cfg)
+		if err != nil {
+			return err
+		}
+
+		if w.InRAM {
+			fmt.Printf("World %q is in RAM\n", w.Name)
+			fmt.Printf("  RAM path: %s\n", w.RAMPath)
+		} else {
+			fmt.Printf("World %q is not in RAM\n", w.Name)
+		}
+		return nil
+	},
+}
+
+var worldsRAMOnCmd = &cobra.Command{
+	Use:   "on <server> <world>",
+	Short: "Enable RAM disk for a world",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		serverName, worldName := args[0], args[1]
@@ -113,7 +144,28 @@ var worldsRAMCmd = &cobra.Command{
 			return err
 		}
 
-		return w.ToggleRAM(s.Config.Username)
+		return w.EnableRAM(s.Config.Username)
+	},
+}
+
+var worldsRAMOffCmd = &cobra.Command{
+	Use:   "off <server> <world>",
+	Short: "Disable RAM disk for a world",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName, worldName := args[0], args[1]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		w, err := world.Get(s.Path, s.Name, worldName, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath, cfg)
+		if err != nil {
+			return err
+		}
+
+		return w.DisableRAM(s.Config.Username)
 	},
 }
 
@@ -293,6 +345,9 @@ var serverBackupCmd = &cobra.Command{
 func init() {
 	worldsToDiskCmd.Flags().Bool("all", false, "Sync all running servers")
 	worldsBackupCmd.Flags().Bool("all", false, "Backup all servers")
+
+	worldsRAMCmd.AddCommand(worldsRAMOnCmd)
+	worldsRAMCmd.AddCommand(worldsRAMOffCmd)
 
 	worldsCmd.AddCommand(worldsListCmd)
 	worldsCmd.AddCommand(worldsOnCmd)

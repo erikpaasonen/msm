@@ -38,63 +38,74 @@ func (w *World) ToDisk(user string) error {
 	return screen.RunAsUser(user, rsyncCmd)
 }
 
-func (w *World) ToggleRAM(user string) error {
+func (w *World) EnableRAM(user string) error {
 	if !w.GlobalCfg.RamdiskStorageEnabled {
-		return fmt.Errorf("ramdisk storage is not enabled")
+		return fmt.Errorf("ramdisk storage is not enabled in config")
+	}
+
+	if w.InRAM {
+		return fmt.Errorf("world %q is already in RAM", w.Name)
 	}
 
 	flagPath := w.FlagPath()
 
-	if w.InRAM {
-		fmt.Printf("Synchronising world %q to disk... ", w.Name)
-		if err := w.ToDisk(user); err != nil {
-			return err
-		}
-		fmt.Println("Done.")
+	fmt.Printf("Adding RAM flag to world %q... ", w.Name)
+	if err := touchFile(flagPath); err != nil {
+		return err
+	}
+	fmt.Println("Done.")
 
-		fmt.Printf("Removing RAM flag from world %q... ", w.Name)
-		if err := os.Remove(flagPath); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		fmt.Println("Done.")
+	fmt.Printf("Copying world %q to RAM... ", w.Name)
+	w.RAMPath = filepath.Join(w.GlobalCfg.RamdiskStoragePath, w.ServerName, w.Name)
+	if err := w.ToRAM(user); err != nil {
+		return err
+	}
+	fmt.Println("Done.")
 
-		fmt.Printf("Removing world %q from RAM... ", w.Name)
-		if err := os.RemoveAll(w.RAMPath); err != nil {
-			return err
-		}
-		fmt.Println("Done.")
+	fmt.Printf("Updating allowed_symlinks.txt... ")
+	if err := EnsureAllowedSymlinks(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
+		return err
+	}
+	fmt.Println("Done.")
 
-		fmt.Printf("Updating allowed_symlinks.txt... ")
-		if err := RemoveAllowedSymlink(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
-			return err
-		}
-		fmt.Println("Done.")
+	w.InRAM = true
+	fmt.Println("RAM enabled. Changes will take effect after server is restarted.")
+	return nil
+}
 
-		w.InRAM = false
-	} else {
-		fmt.Printf("Adding RAM flag to world %q... ", w.Name)
-		if err := touchFile(flagPath); err != nil {
-			return err
-		}
-		fmt.Println("Done.")
-
-		fmt.Printf("Copying world %s to RAM... ", w.Name)
-		w.RAMPath = filepath.Join(w.GlobalCfg.RamdiskStoragePath, w.ServerName, w.Name)
-		if err := w.ToRAM(user); err != nil {
-			return err
-		}
-		fmt.Println("Done.")
-
-		fmt.Printf("Updating allowed_symlinks.txt... ")
-		if err := EnsureAllowedSymlinks(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
-			return err
-		}
-		fmt.Println("Done.")
-
-		w.InRAM = true
+func (w *World) DisableRAM(user string) error {
+	if !w.InRAM {
+		return fmt.Errorf("world %q is not in RAM", w.Name)
 	}
 
-	fmt.Println("Changes will only take effect after server is restarted.")
+	flagPath := w.FlagPath()
+
+	fmt.Printf("Synchronising world %q to disk... ", w.Name)
+	if err := w.ToDisk(user); err != nil {
+		return err
+	}
+	fmt.Println("Done.")
+
+	fmt.Printf("Removing RAM flag from world %q... ", w.Name)
+	if err := os.Remove(flagPath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	fmt.Println("Done.")
+
+	fmt.Printf("Removing world %q from RAM... ", w.Name)
+	if err := os.RemoveAll(w.RAMPath); err != nil {
+		return err
+	}
+	fmt.Println("Done.")
+
+	fmt.Printf("Updating allowed_symlinks.txt... ")
+	if err := RemoveAllowedSymlink(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
+		return err
+	}
+	fmt.Println("Done.")
+
+	w.InRAM = false
+	fmt.Println("RAM disabled. Changes will take effect after server is restarted.")
 	return nil
 }
 
