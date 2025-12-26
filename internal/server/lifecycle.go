@@ -529,11 +529,20 @@ func Init(name string, cfg *config.Config) ([]string, error) {
 	}
 
 	eulaPath := filepath.Join(serverPath, "eula.txt")
+	eulaNeeded := false
 	if _, err := os.Stat(eulaPath); os.IsNotExist(err) {
+		eulaNeeded = true
+	} else {
+		content, err := os.ReadFile(eulaPath)
+		if err != nil || !strings.Contains(string(content), "eula=true") {
+			eulaNeeded = true
+		}
+	}
+	if eulaNeeded {
 		if err := writeEULA(serverPath); err != nil {
 			return created, fmt.Errorf("failed to create eula.txt: %w", err)
 		}
-		created = append(created, "eula.txt")
+		created = append(created, "eula.txt (accepted)")
 	}
 
 	worldStoragePath := filepath.Join(serverPath, cfg.DefaultWorldStoragePath)
