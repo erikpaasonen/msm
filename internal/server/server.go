@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/msmhq/msm/internal/config"
+	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/pkg/screen"
 )
 
@@ -139,13 +141,25 @@ func (c *ServerConfig) set(key, value, serverName string) {
 	case "JAR_PATH":
 		c.JarPath = value
 	case "RAM":
-		fmt.Sscanf(value, "%d", &c.RAM)
+		if v, err := strconv.Atoi(value); err != nil {
+			logging.Warn("invalid RAM value in server config", "server", serverName, "value", value)
+		} else {
+			c.RAM = v
+		}
 	case "INVOCATION":
 		c.Invocation = value
 	case "STOP_DELAY":
-		fmt.Sscanf(value, "%d", &c.StopDelay)
+		if v, err := strconv.Atoi(value); err != nil {
+			logging.Warn("invalid STOP_DELAY value in server config", "server", serverName, "value", value)
+		} else {
+			c.StopDelay = v
+		}
 	case "RESTART_DELAY":
-		fmt.Sscanf(value, "%d", &c.RestartDelay)
+		if v, err := strconv.Atoi(value); err != nil {
+			logging.Warn("invalid RESTART_DELAY value in server config", "server", serverName, "value", value)
+		} else {
+			c.RestartDelay = v
+		}
 	case "WORLD_STORAGE_PATH":
 		c.WorldStoragePath = value
 	case "WORLD_STORAGE_INACTIVE_PATH":

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/msmhq/msm/internal/server"
 	"github.com/spf13/cobra"
@@ -250,9 +249,4 @@ func init() {
 	rootCmd.AddCommand(cmdCmd)
 
 	addServerActionCommands()
-}
-
-func exitWithError(err error) {
-	fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
 }

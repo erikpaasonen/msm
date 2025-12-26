@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -111,8 +112,10 @@ func (s *Session) GetPID() (int, error) {
 			fields := strings.Fields(line)
 			if len(fields) > 0 {
 				pidPart := strings.Split(fields[0], ".")[0]
-				var pid int
-				fmt.Sscanf(pidPart, "%d", &pid)
+				pid, err := strconv.Atoi(pidPart)
+				if err != nil {
+					continue
+				}
 				return pid, nil
 			}
 		}

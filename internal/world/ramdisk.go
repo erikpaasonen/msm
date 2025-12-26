@@ -3,7 +3,6 @@ package world
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/msmhq/msm/pkg/screen"
@@ -121,9 +120,4 @@ func touchFile(path string) error {
 		return err
 	}
 	return file.Close()
-}
-
-func rsyncAvailable() bool {
-	_, err := exec.LookPath("rsync")
-	return err == nil
 }

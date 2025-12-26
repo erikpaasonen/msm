@@ -158,23 +158,6 @@ var updateCmd = &cobra.Command{
 	},
 }
 
-var helpCmd = &cobra.Command{
-	Use:   "help [command]",
-	Short: "Display help for MSM commands",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return rootCmd.Help()
-		}
-
-		targetCmd, _, err := rootCmd.Find(args)
-		if err != nil {
-			return fmt.Errorf("unknown command: %s", args[0])
-		}
-
-		return targetCmd.Help()
-	},
-}
-
 func init() {
 	updateCmd.Flags().Bool("no-scripts", false, "Skip updating scripts")
 

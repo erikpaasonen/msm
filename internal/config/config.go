@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+
+	"github.com/msmhq/msm/internal/logging"
 )
 
 type Config struct {
@@ -172,9 +175,9 @@ func (c *Config) set(key, value string) {
 	case "RDIFF_BACKUP_ENABLED":
 		c.RdiffBackupEnabled = value == "true"
 	case "RDIFF_BACKUP_ROTATION":
-		fmt.Sscanf(value, "%d", &c.RdiffBackupRotation)
+		parseIntConfig(key, value, &c.RdiffBackupRotation)
 	case "RDIFF_BACKUP_NICE":
-		fmt.Sscanf(value, "%d", &c.RdiffBackupNice)
+		parseIntConfig(key, value, &c.RdiffBackupNice)
 	case "WORLD_RDIFF_PATH":
 		c.WorldRdiffPath = value
 	case "RSYNC_BACKUP_ENABLED":
@@ -208,13 +211,13 @@ func (c *Config) set(key, value string) {
 	case "DEFAULT_JAR_PATH":
 		c.DefaultJarPath = value
 	case "DEFAULT_RAM":
-		fmt.Sscanf(value, "%d", &c.DefaultRAM)
+		parseIntConfig(key, value, &c.DefaultRAM)
 	case "DEFAULT_INVOCATION":
 		c.DefaultInvocation = value
 	case "DEFAULT_STOP_DELAY":
-		fmt.Sscanf(value, "%d", &c.DefaultStopDelay)
+		parseIntConfig(key, value, &c.DefaultStopDelay)
 	case "DEFAULT_RESTART_DELAY":
-		fmt.Sscanf(value, "%d", &c.DefaultRestartDelay)
+		parseIntConfig(key, value, &c.DefaultRestartDelay)
 	case "DEFAULT_MESSAGE_STOP":
 		c.DefaultMessageStop = value
 	case "DEFAULT_MESSAGE_STOP_ABORT":
@@ -254,4 +257,12 @@ func (c *Config) Print() {
 	fmt.Printf("Default RAM: %d MB\n", c.DefaultRAM)
 	fmt.Printf("Default Stop Delay: %d seconds\n", c.DefaultStopDelay)
 	fmt.Printf("Default Restart Delay: %d seconds\n", c.DefaultRestartDelay)
+}
+
+func parseIntConfig(key, value string, target *int) {
+	if v, err := strconv.Atoi(value); err != nil {
+		logging.Warn("invalid integer value in config", "key", key, "value", value)
+	} else {
+		*target = v
+	}
 }

@@ -2,7 +2,6 @@ package logging
 
 import (
 	"context"
-	"io"
 	"log/slog"
 	"os"
 	"sync"
@@ -60,16 +59,32 @@ func (h *CLIHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 func (h *CLIHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newStdout, ok := h.stdout.WithAttrs(attrs).(*slog.TextHandler)
+	if !ok {
+		return h
+	}
+	newStderr, ok := h.stderr.WithAttrs(attrs).(*slog.TextHandler)
+	if !ok {
+		return h
+	}
 	return &CLIHandler{
-		stdout: h.stdout.WithAttrs(attrs).(*slog.TextHandler),
-		stderr: h.stderr.WithAttrs(attrs).(*slog.TextHandler),
+		stdout: newStdout,
+		stderr: newStderr,
 	}
 }
 
 func (h *CLIHandler) WithGroup(name string) slog.Handler {
+	newStdout, ok := h.stdout.WithGroup(name).(*slog.TextHandler)
+	if !ok {
+		return h
+	}
+	newStderr, ok := h.stderr.WithGroup(name).(*slog.TextHandler)
+	if !ok {
+		return h
+	}
 	return &CLIHandler{
-		stdout: h.stdout.WithGroup(name).(*slog.TextHandler),
-		stderr: h.stderr.WithGroup(name).(*slog.TextHandler),
+		stdout: newStdout,
+		stderr: newStderr,
 	}
 }
 
@@ -99,17 +114,4 @@ func Warn(msg string, args ...any) {
 
 func Error(msg string, args ...any) {
 	slog.Error(msg, args...)
-}
-
-func SetOutput(w io.Writer) {
-	opts := &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				return slog.Attr{}
-			}
-			return a
-		},
-	}
-	slog.SetDefault(slog.New(slog.NewTextHandler(w, opts)))
 }

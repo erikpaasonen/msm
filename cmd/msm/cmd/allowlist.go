@@ -86,7 +86,9 @@ var allowlistAddCmd = &cobra.Command{
 			}
 
 			if s.IsRunning() {
-				s.SendCommand(fmt.Sprintf("whitelist add %s", p))
+				if err := s.SendCommand(fmt.Sprintf("whitelist add %s", p)); err != nil {
+					logging.Warn("failed to send whitelist command", "player", p, "error", err)
+				}
 			}
 
 			logging.Info("added to allowlist", "player", p)
@@ -116,7 +118,9 @@ var allowlistRemoveCmd = &cobra.Command{
 			}
 
 			if s.IsRunning() {
-				s.SendCommand(fmt.Sprintf("whitelist remove %s", p))
+				if err := s.SendCommand(fmt.Sprintf("whitelist remove %s", p)); err != nil {
+					logging.Warn("failed to send whitelist command", "player", p, "error", err)
+				}
 			}
 
 			logging.Info("removed from allowlist", "player", p)
@@ -174,10 +178,12 @@ var opCmd = &cobra.Command{
 		}
 
 		if s.IsRunning() {
-			s.SendCommand(fmt.Sprintf("op %s", playerName))
+			if err := s.SendCommand(fmt.Sprintf("op %s", playerName)); err != nil {
+				logging.Warn("failed to send op command", "player", playerName, "error", err)
+			}
 		}
 
-		fmt.Printf("Made %q an operator on server %q\n", playerName, serverName)
+		logging.Info("made player an operator", "player", playerName, "server", serverName)
 		return nil
 	},
 }
@@ -199,10 +205,12 @@ var deopCmd = &cobra.Command{
 		}
 
 		if s.IsRunning() {
-			s.SendCommand(fmt.Sprintf("deop %s", playerName))
+			if err := s.SendCommand(fmt.Sprintf("deop %s", playerName)); err != nil {
+				logging.Warn("failed to send deop command", "player", playerName, "error", err)
+			}
 		}
 
-		fmt.Printf("Removed operator status from %q on server %q\n", playerName, serverName)
+		logging.Info("removed operator status", "player", playerName, "server", serverName)
 		return nil
 	},
 }

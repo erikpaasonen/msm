@@ -42,10 +42,14 @@ var blocklistPlayerAddCmd = &cobra.Command{
 			}
 
 			if s.IsRunning() {
+				var banCmd string
 				if reason != "" {
-					s.SendCommand(fmt.Sprintf("ban %s %s", p, reason))
+					banCmd = fmt.Sprintf("ban %s %s", p, reason)
 				} else {
-					s.SendCommand(fmt.Sprintf("ban %s", p))
+					banCmd = fmt.Sprintf("ban %s", p)
+				}
+				if err := s.SendCommand(banCmd); err != nil {
+					logging.Warn("failed to send ban command", "player", p, "error", err)
 				}
 			}
 
@@ -76,7 +80,9 @@ var blocklistPlayerRemoveCmd = &cobra.Command{
 			}
 
 			if s.IsRunning() {
-				s.SendCommand(fmt.Sprintf("pardon %s", p))
+				if err := s.SendCommand(fmt.Sprintf("pardon %s", p)); err != nil {
+					logging.Warn("failed to send pardon command", "player", p, "error", err)
+				}
 			}
 
 			logging.Info("unbanned player", "player", p)
@@ -147,10 +153,14 @@ var blocklistIPAddCmd = &cobra.Command{
 			}
 
 			if s.IsRunning() {
+				var banCmd string
 				if reason != "" {
-					s.SendCommand(fmt.Sprintf("ban-ip %s %s", ip, reason))
+					banCmd = fmt.Sprintf("ban-ip %s %s", ip, reason)
 				} else {
-					s.SendCommand(fmt.Sprintf("ban-ip %s", ip))
+					banCmd = fmt.Sprintf("ban-ip %s", ip)
+				}
+				if err := s.SendCommand(banCmd); err != nil {
+					logging.Warn("failed to send ban-ip command", "ip", ip, "error", err)
 				}
 			}
 
@@ -181,7 +191,9 @@ var blocklistIPRemoveCmd = &cobra.Command{
 			}
 
 			if s.IsRunning() {
-				s.SendCommand(fmt.Sprintf("pardon-ip %s", ip))
+				if err := s.SendCommand(fmt.Sprintf("pardon-ip %s", ip)); err != nil {
+					logging.Warn("failed to send pardon-ip command", "ip", ip, "error", err)
+				}
 			}
 
 			logging.Info("unbanned IP", "ip", ip)
