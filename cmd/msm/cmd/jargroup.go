@@ -126,7 +126,28 @@ var jargroupGetLatestCmd = &cobra.Command{
 }
 
 var jarCmd = &cobra.Command{
-	Use:   "jar <server> <jargroup> [file]",
+	Use:   "jar <server>",
+	Short: "Show or manage server jar",
+	Long: `Show or manage server jar.
+
+Without a subcommand, shows the current jar path.
+Use 'jar link' to link to a jar group, or 'jar download' for vanilla.`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Server %q jar: %s\n", serverName, s.Config.JarPath)
+		return nil
+	},
+}
+
+var jarLinkCmd = &cobra.Command{
+	Use:   "link <server> <jargroup> [file]",
 	Short: "Link a server to a jar from a jar group",
 	Args:  cobra.RangeArgs(2, 3),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -304,7 +325,8 @@ func init() {
 	jargroupCmd.AddCommand(jargroupChangeURLCmd)
 	jargroupCmd.AddCommand(jargroupGetLatestCmd)
 
-	jarCmd.Flags().Bool("force", false, "Force jar change even if Fabric doesn't support the new version")
+	jarLinkCmd.Flags().Bool("force", false, "Force jar change even if Fabric doesn't support the new version")
+	jarCmd.AddCommand(jarLinkCmd)
 	jarCmd.AddCommand(jarDownloadCmd)
 
 	rootCmd.AddCommand(jargroupCmd)

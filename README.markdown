@@ -309,14 +309,17 @@ msm cron install             # Install maintenance cron job
 ### Jar Management
 
 ```bash
-# Simple: download vanilla Minecraft directly
+# Show current jar
+msm jar <server>
+
+# Download vanilla Minecraft directly
 msm jar download <server>           # Latest version
 msm jar download <server> 1.21.4    # Specific version
 
-# Advanced: jar groups for custom jars (Paper, Spigot, etc.)
+# Jar groups for custom jars (Paper, Spigot, etc.)
 msm jargroup create <name> <url>
 msm jargroup getlatest <name>
-msm jar <server> <jargroup>
+msm jar link <server> <jargroup>
 ```
 
 ## RAM Disk Support

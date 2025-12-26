@@ -112,13 +112,16 @@ Jar groups organize server JAR files for easy version management.
 | `msm jargroup changeurl <name> <url>` | Change the download URL |
 | `msm jargroup getlatest <name>` | Download latest JAR from URL |
 
-### Linking Servers to Jars
+### Server Jar Management
 
 | Command | Description |
 |---------|-------------|
-| `msm jar <server> <jargroup>` | Link server to latest jar in group |
-| `msm jar <server> <jargroup> <file>` | Link server to specific jar file |
-| `msm jar <server> <jargroup> --force` | Force link (bypasses Fabric check) |
+| `msm jar <server>` | Show current jar for server |
+| `msm jar link <server> <jargroup>` | Link server to latest jar in group |
+| `msm jar link <server> <jargroup> <file>` | Link server to specific jar file |
+| `msm jar link <server> <jargroup> --force` | Force link (bypasses Fabric check) |
+| `msm jar download <server>` | Download latest vanilla Minecraft |
+| `msm jar download <server> <version>` | Download specific Minecraft version |
 
 ## Fabric Mod Loader
 
