@@ -55,18 +55,27 @@ msm console survival
 **Linux (Debian/Ubuntu):**
 ```bash
 sudo apt update
-sudo apt install golang-go screen rsync
+sudo apt install golang-go screen rsync openjdk-21-jre-headless
 ```
 
 **Linux (RHEL/Fedora):**
 ```bash
-sudo dnf install golang screen rsync
+sudo dnf install golang screen rsync java-21-openjdk-headless
 ```
 
 **macOS:**
 ```bash
-brew install go screen rsync
+brew install go screen rsync openjdk@21
 ```
+
+**Java version requirements:**
+
+| Minecraft Version | Minimum Java |
+|-------------------|--------------|
+| 1.21+ | Java 21 |
+| 1.18 - 1.20.x | Java 17 |
+| 1.17 | Java 16 |
+| 1.12 - 1.16.x | Java 8 |
 
 ### From Source (Recommended)
 
