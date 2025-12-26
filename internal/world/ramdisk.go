@@ -1,9 +1,11 @@
 package world
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/msmhq/msm/pkg/screen"
 )
@@ -62,6 +64,12 @@ func (w *World) ToggleRAM(user string) error {
 		}
 		fmt.Println("Done.")
 
+		fmt.Printf("Updating allowed_symlinks.txt... ")
+		if err := RemoveAllowedSymlink(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
+			return err
+		}
+		fmt.Println("Done.")
+
 		w.InRAM = false
 	} else {
 		fmt.Printf("Adding RAM flag to world %q... ", w.Name)
@@ -77,6 +85,12 @@ func (w *World) ToggleRAM(user string) error {
 		}
 		fmt.Println("Done.")
 
+		fmt.Printf("Updating allowed_symlinks.txt... ")
+		if err := EnsureAllowedSymlinks(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
+			return err
+		}
+		fmt.Println("Done.")
+
 		w.InRAM = true
 	}
 
@@ -87,6 +101,10 @@ func (w *World) ToggleRAM(user string) error {
 func (w *World) SetupRAMSymlink(worldStoragePath string) error {
 	if !w.InRAM || !w.GlobalCfg.RamdiskStorageEnabled {
 		return nil
+	}
+
+	if err := EnsureAllowedSymlinks(w.ServerPath, w.GlobalCfg.RamdiskStoragePath); err != nil {
+		return fmt.Errorf("failed to update allowed_symlinks.txt: %w", err)
 	}
 
 	serverWorldPath := worldStoragePath
@@ -120,4 +138,75 @@ func touchFile(path string) error {
 		return err
 	}
 	return file.Close()
+}
+
+func EnsureAllowedSymlinks(serverPath, ramdiskPath string) error {
+	allowedFile := filepath.Join(serverPath, "allowed_symlinks.txt")
+	entry := "prefix" + ramdiskPath
+
+	existingLines := []string{}
+	if file, err := os.Open(allowedFile); err == nil {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			existingLines = append(existingLines, line)
+			if line == entry {
+				file.Close()
+				return nil
+			}
+		}
+		file.Close()
+	}
+
+	existingLines = append(existingLines, entry)
+
+	file, err := os.Create(allowedFile)
+	if err != nil {
+		return fmt.Errorf("failed to create allowed_symlinks.txt: %w", err)
+	}
+	defer file.Close()
+
+	for _, line := range existingLines {
+		if _, err := fmt.Fprintln(file, line); err != nil {
+			return fmt.Errorf("failed to write allowed_symlinks.txt: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func RemoveAllowedSymlink(serverPath, ramdiskPath string) error {
+	allowedFile := filepath.Join(serverPath, "allowed_symlinks.txt")
+	entry := "prefix" + ramdiskPath
+
+	file, err := os.Open(allowedFile)
+	if err != nil {
+		return nil
+	}
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, entry) {
+			lines = append(lines, line)
+		}
+	}
+	file.Close()
+
+	if len(lines) == 0 {
+		return os.Remove(allowedFile)
+	}
+
+	outFile, err := os.Create(allowedFile)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	for _, line := range lines {
+		fmt.Fprintln(outFile, line)
+	}
+
+	return nil
 }

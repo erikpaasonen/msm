@@ -122,6 +122,27 @@ sudo msm setup
 msm start <server>
 ```
 
+## RAM disk issues
+
+### Forbidden symlinks error
+
+```
+Found forbidden symlinks: /opt/msm/servers/survival/worldstorage/world -> /dev/shm/msm/survival/world
+```
+
+Minecraft 1.20+ blocks symlinks pointing outside the server directory by default. MSM automatically manages the `allowed_symlinks.txt` file when you enable RAM disk, but if you're seeing this error:
+
+1. **Re-toggle RAM** to regenerate the allowlist:
+   ```bash
+   msm worlds ram <server> <world>  # Disable
+   msm worlds ram <server> <world>  # Re-enable
+   ```
+
+2. **Or manually create** `/opt/msm/servers/<name>/allowed_symlinks.txt`:
+   ```
+   prefix/dev/shm
+   ```
+
 ## Screen session issues
 
 ### Can't attach to console
