@@ -6,7 +6,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strconv"
+	"syscall"
 )
 
 const VersionManifestURL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
@@ -155,5 +158,29 @@ func EnsureCached(cacheDir, version string) (string, error) {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
+	chownToDefaultUser(jarPath)
+
 	return jarPath, nil
+}
+
+func chownToDefaultUser(path string) {
+	if syscall.Getuid() != 0 {
+		return
+	}
+
+	u, err := user.Lookup("minecraft")
+	if err != nil {
+		return
+	}
+
+	uid, err := strconv.Atoi(u.Uid)
+	if err != nil {
+		return
+	}
+	gid, err := strconv.Atoi(u.Gid)
+	if err != nil {
+		return
+	}
+
+	os.Chown(path, uid, gid)
 }

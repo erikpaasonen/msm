@@ -246,6 +246,8 @@ func (c *Client) DownloadServerJar(mcVersion, loaderVersion, installerVersion st
 		return "", fmt.Errorf("failed to finalize jar file: %w", err)
 	}
 
+	chownToDefaultUser(jarPath)
+
 	logging.Info("fabric server jar downloaded", "path", jarPath)
 	return jarPath, nil
 }
