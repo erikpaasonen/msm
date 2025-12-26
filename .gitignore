@@ -5,4 +5,4 @@ _*/*
 .idea
 
 # compiled binary
-msm
+/bin/
