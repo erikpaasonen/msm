@@ -27,6 +27,10 @@ Commands that operate on all servers or the MSM system itself.
 | `msm server create <name>` | Create a new server |
 | `msm server delete <name>` | Delete a server (must be stopped) |
 | `msm server rename <old> <new>` | Rename a server |
+| `msm server init <name>` | Initialize missing config files |
+| `msm server config <server>` | Show all config values |
+| `msm server config <server> <key>` | Show specific config value |
+| `msm server config set <server> <key> <value>` | Set a config value |
 
 ### Lifecycle
 

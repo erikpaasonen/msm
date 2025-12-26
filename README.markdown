@@ -266,6 +266,7 @@ msm server delete <name>     # Delete a server
 msm server rename <old> <new>  # Rename a server
 msm server init <name>       # Initialize missing config files (for imported worlds)
 msm server config <server>   # Show per-server configuration
+msm server config set <server> <key> <value>  # Set a config value
 ```
 
 ### Server Lifecycle

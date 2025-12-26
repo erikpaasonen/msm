@@ -45,9 +45,14 @@ var logrollCmd = &cobra.Command{
 }
 
 var serverConfigCmd = &cobra.Command{
-	Use:   "config <server> [key] [value]",
-	Short: "Show or set per-server configuration",
-	Args:  cobra.RangeArgs(1, 3),
+	Use:   "config <server> [key]",
+	Short: "Show per-server configuration",
+	Long: `Show per-server configuration.
+
+Without a key, shows all configuration values.
+With a key, shows just that value.
+Use 'config set' to change values.`,
+	Args: cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		serverName := args[0]
 
@@ -81,33 +86,44 @@ var serverConfigCmd = &cobra.Command{
 			return nil
 		}
 
-		if len(args) == 2 {
-			key := args[1]
-			switch key {
-			case "username":
-				fmt.Println(s.Config.Username)
-			case "screen_name":
-				fmt.Println(s.Config.ScreenName)
-			case "jar_path":
-				fmt.Println(s.Config.JarPath)
-			case "ram":
-				fmt.Println(s.Config.RAM)
-			case "stop_delay":
-				fmt.Println(s.Config.StopDelay)
-			case "restart_delay":
-				fmt.Println(s.Config.RestartDelay)
-			case "world_storage_path":
-				fmt.Println(s.Config.WorldStoragePath)
-			case "world_storage_inactive_path":
-				fmt.Println(s.Config.WorldStorageInactivePath)
-			default:
-				return fmt.Errorf("unknown config key: %s", key)
-			}
-			return nil
+		key := args[1]
+		switch key {
+		case "username":
+			fmt.Println(s.Config.Username)
+		case "screen_name":
+			fmt.Println(s.Config.ScreenName)
+		case "jar_path":
+			fmt.Println(s.Config.JarPath)
+		case "ram":
+			fmt.Println(s.Config.RAM)
+		case "stop_delay":
+			fmt.Println(s.Config.StopDelay)
+		case "restart_delay":
+			fmt.Println(s.Config.RestartDelay)
+		case "world_storage_path":
+			fmt.Println(s.Config.WorldStoragePath)
+		case "world_storage_inactive_path":
+			fmt.Println(s.Config.WorldStorageInactivePath)
+		default:
+			return fmt.Errorf("unknown config key: %s\n  Valid keys: username, screen_name, jar_path, ram, stop_delay, restart_delay, world_storage_path, world_storage_inactive_path", key)
 		}
+		return nil
+	},
+}
 
+var serverConfigSetCmd = &cobra.Command{
+	Use:   "set <server> <key> <value>",
+	Short: "Set a per-server configuration value",
+	Args:  cobra.ExactArgs(3),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
 		key := args[1]
 		value := args[2]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
 
 		confPath := filepath.Join(s.Path, "server.conf")
 
@@ -136,7 +152,7 @@ var serverConfigCmd = &cobra.Command{
 		case "world_storage_inactive_path":
 			configKey = "WORLD_STORAGE_INACTIVE_PATH"
 		default:
-			return fmt.Errorf("unknown config key: %s", key)
+			return fmt.Errorf("unknown config key: %s\n  Valid keys: username, screen_name, jar_path, ram, stop_delay, restart_delay, world_storage_path, world_storage_inactive_path", key)
 		}
 
 		if _, err := fmt.Fprintf(file, "%s=\"%s\"\n", configKey, value); err != nil {
