@@ -239,7 +239,7 @@ func (s *Server) SyncRAMWorldsToDisk() error {
 		return nil
 	}
 
-	logging.Info("syncing RAM worlds to disk before stop", "server", s.Name)
+	fmt.Fprintf(os.Stderr, "Syncing RAM worlds to disk for server %q...\n", s.Name)
 
 	if s.IsRunning() {
 		s.SaveOff()

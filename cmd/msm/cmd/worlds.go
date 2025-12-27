@@ -220,7 +220,7 @@ func syncServerToDisk(serverName string) error {
 	synced := 0
 	for _, w := range worlds {
 		if w.InRAM {
-			logging.Info("syncing world to disk", "server", serverName, "world", w.Name)
+			fmt.Fprintf(os.Stderr, "Syncing world %q to disk...\n", w.Name)
 			if err := w.ToDisk(s.Config.Username); err != nil {
 				logging.Error("failed to sync world", "world", w.Name, "error", err)
 				continue
@@ -230,7 +230,7 @@ func syncServerToDisk(serverName string) error {
 	}
 
 	if synced == 0 {
-		logging.Debug("no RAM worlds to sync", "server", serverName)
+		fmt.Fprintln(os.Stderr, "No RAM worlds to sync.")
 	}
 	return nil
 }
