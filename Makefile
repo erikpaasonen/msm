@@ -1,4 +1,4 @@
-.PHONY: build clean install install-config go-install test fmt lint migrate setup systemd-install systemd-uninstall
+.PHONY: build clean install install-config go-install test fmt lint migrate setup systemd-install systemd-uninstall ensure-binary
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS := -ldflags "-X github.com/msmhq/msm/cmd/msm/cmd.Version=$(VERSION)"
@@ -7,16 +7,38 @@ SYSCONFDIR := /etc
 MSM_USER := minecraft
 MSM_HOME := /opt/msm
 
+# Find msm binary: prefer local bin/, fall back to installed location
+MSM_BIN := $(shell if [ -x bin/msm ]; then echo bin/msm; elif [ -x $(PREFIX)/bin/msm ]; then echo $(PREFIX)/bin/msm; fi)
+
 build:
 	go build $(LDFLAGS) -o bin/msm ./cmd/msm
+
+ensure-binary:
+	@if [ -z "$(MSM_BIN)" ]; then \
+		echo "Error: msm binary not found."; \
+		echo ""; \
+		echo "Either build from source (requires Go 1.21+):"; \
+		echo "  make build"; \
+		echo ""; \
+		echo "Or download a pre-built binary:"; \
+		echo "  curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o bin/msm"; \
+		echo "  chmod +x bin/msm"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "Using msm binary: $(MSM_BIN)"
 
 go-install:
 	go install $(LDFLAGS) ./cmd/msm
 
-install: build
+install: ensure-binary
 	@echo "Installing msm to $(PREFIX)/bin..."
 	install -d $(PREFIX)/bin
-	install -m 755 bin/msm $(PREFIX)/bin/msm
+	@if [ "$(MSM_BIN)" != "$(PREFIX)/bin/msm" ]; then \
+		install -m 755 $(MSM_BIN) $(PREFIX)/bin/msm; \
+	else \
+		echo "Binary already installed at $(PREFIX)/bin/msm"; \
+	fi
 	@echo "Installing default config to $(SYSCONFDIR)/msm.conf..."
 	@if [ ! -f $(SYSCONFDIR)/msm.conf ]; then \
 		install -m 644 msm.conf $(SYSCONFDIR)/msm.conf; \
@@ -59,7 +81,7 @@ migrate:
 	fi
 	@echo "Migration cleanup complete. Run 'sudo make install' to complete installation."
 
-setup: build
+setup: ensure-binary
 	@echo "Setting up MSM system user..."
 	@# Ensure group exists
 	@if ! getent group $(MSM_USER) >/dev/null 2>&1; then \
@@ -94,7 +116,7 @@ setup: build
 	fi
 	@# Use msm setup for directory structure and permissions
 	@echo "Setting up directories..."
-	@./bin/msm setup
+	@$(MSM_BIN) setup
 	@echo "System setup complete!"
 
 systemd-install:

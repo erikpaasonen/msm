@@ -77,12 +77,31 @@ brew install go screen rsync openjdk@21
 | 1.17 | Java 16 |
 | 1.12 - 1.16.x | Java 8 |
 
-### From Source (Recommended)
+### From Source
 
 ```bash
 git clone https://github.com/msmhq/msm.git
 cd msm
-make build
+make build           # Requires Go 1.21+
+sudo make setup      # Creates minecraft user and /opt/msm directories
+sudo make install    # Installs binary, config, and cron job
+```
+
+### Pre-built Binaries (Recommended)
+
+Download from the [releases page](https://github.com/msmhq/msm/releases) - no Go required.
+
+```bash
+# Clone repo for Makefile and config files
+git clone https://github.com/msmhq/msm.git
+cd msm
+
+# Download binary to bin/ (Linux amd64 example)
+mkdir -p bin
+curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o bin/msm
+chmod +x bin/msm
+
+# Set up user, directories, config, and cron
 sudo make setup      # Creates minecraft user and /opt/msm directories
 sudo make install    # Installs binary, config, and cron job
 ```
@@ -93,25 +112,6 @@ sudo make systemd-install
 ```
 
 For multi-user setups where multiple people manage their own servers, see [PERMISSIONS.markdown](PERMISSIONS.markdown)
-
-### Pre-built Binaries
-
-Download from the [releases page](https://github.com/msmhq/msm/releases).
-
-```bash
-# Download binary (Linux amd64 example)
-sudo curl -L https://github.com/msmhq/msm/releases/latest/download/msm-linux-amd64 -o /usr/local/bin/msm
-sudo chmod +x /usr/local/bin/msm
-
-# Clone repo for config and setup scripts
-git clone https://github.com/msmhq/msm.git
-cd msm
-
-# Set up user, directories, config, and cron
-sudo make setup
-sudo make install-config
-sudo msm cron install
-```
 
 ### Verify Installation
 
