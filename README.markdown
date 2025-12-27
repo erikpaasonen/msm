@@ -1,6 +1,6 @@
 # Minecraft Server Manager
 
-A command-line tool for managing multiple Minecraft servers on a single machine.
+A command-line tool for running and managing multiple Minecraft server instances on a single host.
 
 **MSM v0.12.0** is a complete rewrite in Go, replacing the original bash init script with a modern, type-safe CLI.
 
@@ -122,7 +122,7 @@ msm config
 
 ## Features
 
-- **Multi-server management** - Run multiple Minecraft servers from one machine
+- **Multi-instance management** - Run multiple Minecraft server instances on a single host
 - **Server lifecycle** - Start, stop, restart with configurable delays and player warnings
 - **World backups** - Zip, rsync, or rdiff-backup with automatic rotation
 - **RAM disk support** - Load worlds into RAM for reduced lag
@@ -134,7 +134,7 @@ msm config
 
 ## Running Multiple Servers
 
-MSM is designed to run multiple Minecraft servers simultaneously on a single machine. Each MSM "server" is an independent Minecraft instance with its own world, port, and configuration.
+MSM is designed to run multiple Minecraft server instances simultaneously on a single host. Each MSM "server" is an independent Minecraft instance with its own world, port, and configuration.
 
 ### How It Works
 
