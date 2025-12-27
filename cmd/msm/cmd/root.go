@@ -50,9 +50,26 @@ var versionCmd = &cobra.Command{
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start all servers",
+	Use:   "start [server]",
+	Short: "Start a server, or all servers if none specified",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 1 {
+			s, err := server.Get(args[0], cfg)
+			if err != nil {
+				return err
+			}
+			if err := s.Start(); err != nil {
+				return err
+			}
+			if port := s.Port(); port > 0 {
+				fmt.Printf("Started server %q on port %d\n", s.Name, port)
+			} else {
+				fmt.Printf("Started server %q\n", s.Name)
+			}
+			return nil
+		}
+
 		servers, err := server.DiscoverAll(cfg)
 		if err != nil {
 			return err
@@ -75,10 +92,23 @@ var startCmd = &cobra.Command{
 }
 
 var stopCmd = &cobra.Command{
-	Use:   "stop",
-	Short: "Stop all servers",
+	Use:   "stop [server]",
+	Short: "Stop a server, or all servers if none specified",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		now, _ := cmd.Flags().GetBool("now")
+
+		if len(args) == 1 {
+			s, err := server.Get(args[0], cfg)
+			if err != nil {
+				return err
+			}
+			if err := s.Stop(now); err != nil {
+				return err
+			}
+			fmt.Printf("Stopped server %q\n", s.Name)
+			return nil
+		}
 
 		servers, err := server.DiscoverAll(cfg)
 		if err != nil {
@@ -97,10 +127,23 @@ var stopCmd = &cobra.Command{
 }
 
 var restartCmd = &cobra.Command{
-	Use:   "restart",
-	Short: "Restart all servers",
+	Use:   "restart [server]",
+	Short: "Restart a server, or all servers if none specified",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		now, _ := cmd.Flags().GetBool("now")
+
+		if len(args) == 1 {
+			s, err := server.Get(args[0], cfg)
+			if err != nil {
+				return err
+			}
+			if err := s.Restart(now); err != nil {
+				return err
+			}
+			fmt.Printf("Restarted server %q\n", s.Name)
+			return nil
+		}
 
 		servers, err := server.DiscoverAll(cfg)
 		if err != nil {

@@ -139,31 +139,7 @@ func serverAction(action string) func(*cobra.Command, []string) error {
 			return err
 		}
 
-		now, _ := cmd.Flags().GetBool("now")
-
 		switch action {
-		case "start":
-			if err := s.Start(); err != nil {
-				return err
-			}
-			if port := s.Port(); port > 0 {
-				fmt.Printf("Started server %q on port %d\n", name, port)
-			} else {
-				fmt.Printf("Started server %q\n", name)
-			}
-
-		case "stop":
-			if err := s.Stop(now); err != nil {
-				return err
-			}
-			fmt.Printf("Stopped server %q\n", name)
-
-		case "restart":
-			if err := s.Restart(now); err != nil {
-				return err
-			}
-			fmt.Printf("Restarted server %q\n", name)
-
 		case "status":
 			status := s.Status()
 			if port := s.Port(); port > 0 {
@@ -200,29 +176,21 @@ func serverAction(action string) func(*cobra.Command, []string) error {
 
 func addServerActionCommands() {
 	actions := []struct {
-		name   string
-		short  string
-		hasNow bool
+		name  string
+		short string
 	}{
-		{"start", "Start the server", false},
-		{"stop", "Stop the server", true},
-		{"restart", "Restart the server", true},
-		{"status", "Show server status", false},
-		{"console", "Attach to server console", false},
-		{"connected", "List connected players", false},
+		{"status", "Show server status"},
+		{"console", "Attach to server console"},
+		{"connected", "List connected players"},
 	}
 
 	for _, a := range actions {
 		cmd := &cobra.Command{
-			Use:                a.name,
+			Use:                a.name + " <server>",
 			Short:              a.short,
 			Args:               cobra.ExactArgs(1),
 			RunE:               serverAction(a.name),
 			DisableFlagParsing: false,
-		}
-
-		if a.hasNow {
-			cmd.Flags().Bool("now", false, "Execute immediately without warning players")
 		}
 
 		rootCmd.AddCommand(cmd)
