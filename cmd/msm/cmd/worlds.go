@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/msmhq/msm/internal/logging"
 	"github.com/msmhq/msm/internal/server"
@@ -37,9 +39,26 @@ var worldsListCmd = &cobra.Command{
 			return nil
 		}
 
-		for _, w := range worlds {
-			fmt.Printf("%s (%s)\n", w.Name, w.Status())
+		mcVersion := "-"
+		if v, err := s.DetectMCVersion(); err == nil {
+			mcVersion = v
 		}
+
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(tw, "NAME\tSERVER\tSTATUS\tLOCATION\tVERSION")
+
+		for _, w := range worlds {
+			status := "inactive"
+			if w.Active {
+				status = "active"
+			}
+			location := "disk"
+			if w.InRAM {
+				location = "RAM"
+			}
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", w.Name, serverName, status, location, mcVersion)
+		}
+		tw.Flush()
 		return nil
 	},
 }

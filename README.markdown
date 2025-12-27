@@ -166,6 +166,25 @@ msm start creative
 msm server list
 ```
 
+```
+NAME       STATUS   PORT   RAM SIZE  VERSION  FABRIC
+survival   running  25565  2048M     1.21.4   yes
+creative   running  25566  2048M     1.21.4   -
+skyblock   stopped  25567  4096M     1.20.4   -
+```
+
+```bash
+# Inspect worlds for a server
+msm worlds list survival
+```
+
+```
+NAME            SERVER     STATUS  LOCATION  VERSION
+world           survival   active  RAM       1.21.4
+world_nether    survival   active  disk      1.21.4
+world_the_end   survival   active  disk      1.21.4
+```
+
 Players connect to different servers using their port: `yourhost:25565`, `yourhost:25566`, etc.
 
 ### Resource Planning

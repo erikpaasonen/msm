@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/msmhq/msm/internal/server"
 	"github.com/spf13/cobra"
@@ -26,14 +28,27 @@ var serverListCmd = &cobra.Command{
 			return nil
 		}
 
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(w, "NAME\tSTATUS\tPORT\tRAM SIZE\tVERSION\tFABRIC")
+
 		for _, s := range servers {
 			status := s.Status()
-			if port := s.Port(); port > 0 {
-				fmt.Printf("%s (%s, port %d)\n", s.Name, status, port)
-			} else {
-				fmt.Printf("%s (%s)\n", s.Name, status)
+			port := "-"
+			if p := s.Port(); p > 0 {
+				port = fmt.Sprintf("%d", p)
 			}
+			ram := fmt.Sprintf("%dM", s.Config.RAM)
+			version := "-"
+			if v, err := s.DetectMCVersion(); err == nil {
+				version = v
+			}
+			fabric := "-"
+			if s.Config.FabricEnabled {
+				fabric = "yes"
+			}
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", s.Name, status, port, ram, version, fabric)
 		}
+		w.Flush()
 		return nil
 	},
 }
