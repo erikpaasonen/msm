@@ -134,8 +134,7 @@ Commands for managing Fabric mod loader integration.
 | Command | Description |
 |---------|-------------|
 | `msm fabric status <server>` | Show Fabric status and versions |
-| `msm fabric on <server>` | Enable Fabric for server |
-| `msm fabric off <server>` | Disable Fabric for server |
+| `msm fabric set <server> <on\|off>` | Enable or disable Fabric for server |
 | `msm fabric versions` | List supported Minecraft versions |
 | `msm fabric versions <mc-version>` | List loader versions for MC version |
 | `msm fabric update <server>` | Check for and download newer loader |

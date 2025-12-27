@@ -136,7 +136,7 @@ func Load(path string) (*Config, error) {
 		FabricStoragePath:                    "/opt/msm/fabric",
 		FabricCacheTTL:                       60,
 		DefaultServerPort:                    25565,
-		DefaultRenderDistance:                12,
+		DefaultRenderDistance:                10,
 		DefaultMaxPlayers:                    20,
 		DefaultDifficulty:                    "normal",
 		DefaultGamemode:                      "survival",

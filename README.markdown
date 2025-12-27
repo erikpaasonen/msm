@@ -174,7 +174,7 @@ skyblock   stopped  25567  4096M     1.20.4   -
 ```
 
 ```bash
-# Inspect worlds for a server
+# Inspect worlds for a server, even though there's typically only one
 msm worlds list survival
 ```
 
@@ -214,7 +214,7 @@ msm start survival
 
 ## Configuration
 
-MSM reads its configuration from `/etc/msm.conf`. Override with `--config` flag or `MSM_CONF` environment variable.
+MSM reads its configuration from `/etc/msm.conf`. Override this path with `--config` flag or `MSM_CONF` environment variable.
 
 ### Key Settings
 
@@ -232,7 +232,7 @@ DEFAULT_STOP_DELAY="10"
 
 # Minecraft server.properties defaults (used when creating new servers)
 DEFAULT_SERVER_PORT="25565"
-DEFAULT_RENDER_DISTANCE="12"
+DEFAULT_RENDER_DISTANCE="10"
 DEFAULT_MAX_PLAYERS="20"
 DEFAULT_DIFFICULTY="normal"
 DEFAULT_GAMEMODE="survival"
@@ -325,6 +325,8 @@ msm kick <server> <player> [reason]
 ```bash
 sudo msm setup               # Fix directory ownership and permissions
 msm config                   # Show global configuration
+msm server config <server>   # Show per-server configuration
+msm server config set <server> <key> <value>  # Set per-server config value
 msm cron install             # Install maintenance cron job
 ```
 
@@ -336,7 +338,7 @@ msm jar <server>
 
 # Download vanilla Minecraft directly
 msm jar download <server>           # Latest version
-msm jar download <server> 1.21.4    # Specific version
+msm jar download <server> 1.21.11    # Specific version
 
 # Jar groups for custom jars (Paper, Spigot, etc.)
 msm jargroup create <name> <url>
@@ -378,13 +380,16 @@ MSM natively supports [Fabric](https://fabricmc.net/):
 
 ```bash
 # Enable Fabric
-msm fabric on survival
+msm fabric set survival on
 
-# Start server (auto-downloads Fabric launcher)
-msm start survival
+# Disable Fabric
+msm fabric set survival off
 
 # Check status
 msm fabric status survival
+
+# Start server (auto-downloads Fabric launcher if enabled)
+msm start survival
 
 # List available versions
 msm fabric versions 1.21.4
@@ -400,12 +405,12 @@ Error: fabric does not yet support minecraft 26.1 - upgrade blocked
 
 ### Fabric Configuration
 
-Add to `<server>/server.conf`:
+The `msm fabric set <server> on` command automatically updates the server's configuration. You can also manually edit `<server>/server.conf` to pin specific versions:
 
 ```bash
-FABRIC_ENABLED="true"
-FABRIC_LOADER_VERSION="0.16.10"      # Optional: pin specific loader
-FABRIC_INSTALLER_VERSION="1.1.0"     # Optional: pin specific installer
+FABRIC_ENABLED="true"                # Set by 'msm fabric set <server> on'
+FABRIC_LOADER_VERSION="0.16.10"      # Optional: pin specific loader version
+FABRIC_INSTALLER_VERSION="1.1.0"     # Optional: pin specific installer version
 ```
 
 ## Full Command Reference
@@ -414,22 +419,35 @@ See [COMMANDS.markdown](COMMANDS.markdown) for the complete command reference, i
 
 ## Shell Completion
 
+MSM can generate shell completion scripts that enable Tab-completion for commands, subcommands, and server names. After installing, restart your shell or open a new terminal.
+
+**Bash:**
 ```bash
-# Bash
-msm completion bash > /etc/bash_completion.d/msm
+sudo msm completion bash > /etc/bash_completion.d/msm
+```
 
-# Zsh
+**Zsh:**
+```bash
 msm completion zsh > "${fpath[1]}/_msm"
+```
 
-# Fish
+**Fish:**
+```bash
 msm completion fish > ~/.config/fish/completions/msm.fish
 ```
+
+Once installed, typing `msm ser<Tab>` completes to `msm server`, and `msm server li<Tab>` completes to `msm server list`.
 
 ## Upgrading from Bash MSM
 
 See [UPGRADING.md](UPGRADING.md) for migration instructions from the original bash MSM.
 
-The Go rewrite maintains full compatibility with existing configurations, server directories, and world storage.
+The Go rewrite maintains full compatibility with existing configurations, server directories, and world storage, while adding new features:
+
+- **Fabric mod loader** - Native support with version compatibility checks
+- **Shell completion** - Auto-generated Tab-completion now includes Zsh and Fish
+- **Safer RAM disk** - Automatic sync to disk on shutdown, 2-minute background sync
+- **Better visibility** - Tabular output showing status, ports, versions at a glance
 
 ## Troubleshooting
 

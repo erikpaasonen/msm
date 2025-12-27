@@ -80,73 +80,66 @@ var fabricStatusCmd = &cobra.Command{
 	},
 }
 
-var fabricOnCmd = &cobra.Command{
-	Use:   "on <server>",
-	Short: "Enable Fabric for a server",
-	Args:  cobra.ExactArgs(1),
+var fabricSetCmd = &cobra.Command{
+	Use:   "set <server> <on|off>",
+	Short: "Enable or disable Fabric for a server",
+	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		serverName := args[0]
+		state := args[1]
+
+		if state != "on" && state != "off" {
+			return fmt.Errorf("invalid state %q: must be 'on' or 'off'", state)
+		}
 
 		s, err := server.Get(serverName, cfg)
 		if err != nil {
 			return err
 		}
 
-		if s.Config.FabricEnabled {
-			fmt.Printf("Fabric is already enabled for server %q\n", serverName)
-			return nil
+		if state == "on" {
+			if s.Config.FabricEnabled {
+				fmt.Printf("Fabric is already enabled for server %q\n", serverName)
+				return nil
+			}
+
+			mcVersion, err := s.DetectMCVersion()
+			if err != nil {
+				return fmt.Errorf("cannot enable fabric: %w", err)
+			}
+
+			client, err := fabric.NewClient(cfg.FabricStoragePath, cfg.FabricCacheTTL)
+			if err != nil {
+				return err
+			}
+
+			supported, err := client.SupportsVersion(mcVersion)
+			if err != nil {
+				return fmt.Errorf("failed to check fabric compatibility: %w", err)
+			}
+
+			if !supported {
+				return fmt.Errorf("fabric does not support minecraft %s", mcVersion)
+			}
+
+			if err := setServerConfigValue(s.Path, "FABRIC_ENABLED", "true"); err != nil {
+				return err
+			}
+
+			fmt.Printf("Enabled Fabric for server %q (Minecraft %s)\n", serverName, mcVersion)
+		} else {
+			if !s.Config.FabricEnabled {
+				fmt.Printf("Fabric is already disabled for server %q\n", serverName)
+				return nil
+			}
+
+			if err := setServerConfigValue(s.Path, "FABRIC_ENABLED", "false"); err != nil {
+				return err
+			}
+
+			fmt.Printf("Disabled Fabric for server %q\n", serverName)
 		}
 
-		mcVersion, err := s.DetectMCVersion()
-		if err != nil {
-			return fmt.Errorf("cannot enable fabric: %w", err)
-		}
-
-		client, err := fabric.NewClient(cfg.FabricStoragePath, cfg.FabricCacheTTL)
-		if err != nil {
-			return err
-		}
-
-		supported, err := client.SupportsVersion(mcVersion)
-		if err != nil {
-			return fmt.Errorf("failed to check fabric compatibility: %w", err)
-		}
-
-		if !supported {
-			return fmt.Errorf("fabric does not support minecraft %s", mcVersion)
-		}
-
-		if err := setServerConfigValue(s.Path, "FABRIC_ENABLED", "true"); err != nil {
-			return err
-		}
-
-		fmt.Printf("Enabled Fabric for server %q (Minecraft %s)\n", serverName, mcVersion)
-		return nil
-	},
-}
-
-var fabricOffCmd = &cobra.Command{
-	Use:   "off <server>",
-	Short: "Disable Fabric for a server",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName := args[0]
-
-		s, err := server.Get(serverName, cfg)
-		if err != nil {
-			return err
-		}
-
-		if !s.Config.FabricEnabled {
-			fmt.Printf("Fabric is already disabled for server %q\n", serverName)
-			return nil
-		}
-
-		if err := setServerConfigValue(s.Path, "FABRIC_ENABLED", "false"); err != nil {
-			return err
-		}
-
-		fmt.Printf("Disabled Fabric for server %q\n", serverName)
 		return nil
 	},
 }
@@ -336,8 +329,7 @@ func setServerConfigValue(serverPath, key, value string) error {
 
 func init() {
 	fabricCmd.AddCommand(fabricStatusCmd)
-	fabricCmd.AddCommand(fabricOnCmd)
-	fabricCmd.AddCommand(fabricOffCmd)
+	fabricCmd.AddCommand(fabricSetCmd)
 	fabricCmd.AddCommand(fabricVersionsCmd)
 	fabricCmd.AddCommand(fabricUpdateCmd)
 	fabricCmd.AddCommand(fabricSetLoaderCmd)
