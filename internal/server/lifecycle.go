@@ -283,7 +283,6 @@ func (s *Server) Stop(immediate bool) error {
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
 
-	fmt.Fprintf(os.Stderr, "Sending stop command...\n")
 	if err := s.SendCommand("stop"); err != nil {
 		return err
 	}
