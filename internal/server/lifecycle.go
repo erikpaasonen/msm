@@ -278,10 +278,12 @@ func (s *Server) Stop(immediate bool) error {
 		delay := s.Config.StopDelay
 		msg := strings.ReplaceAll(s.Config.MessageStop, "{DELAY}", strconv.Itoa(delay))
 
+		fmt.Fprintf(os.Stderr, "Warning players (%d second delay)...\n", delay)
 		s.Say(msg)
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
 
+	fmt.Fprintf(os.Stderr, "Sending stop command...\n")
 	if err := s.SendCommand("stop"); err != nil {
 		return err
 	}
@@ -330,6 +332,7 @@ func (s *Server) Restart(immediate bool) error {
 			delay := s.Config.RestartDelay
 			msg := strings.ReplaceAll(s.Config.MessageRestart, "{DELAY}", strconv.Itoa(delay))
 
+			fmt.Fprintf(os.Stderr, "Warning players (%d second delay)...\n", delay)
 			s.Say(msg)
 			time.Sleep(time.Duration(delay) * time.Second)
 		}
