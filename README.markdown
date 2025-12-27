@@ -446,7 +446,7 @@ The Go rewrite maintains full compatibility with existing configurations, server
 
 - **Fabric mod loader** - Native support with version compatibility checks
 - **Shell completion** - Auto-generated Tab-completion now includes Zsh and Fish
-- **Safer RAM disk** - Automatic sync to disk on shutdown, 2-minute background sync
+- **Safer RAM disk** - 2-minute background sync limits data loss on unexpected shutdown
 - **Better visibility** - Tabular output showing status, ports, versions at a glance
 
 ## Troubleshooting
