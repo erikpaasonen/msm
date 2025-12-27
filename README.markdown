@@ -126,7 +126,7 @@ msm config
 - **Server lifecycle** - Start, stop, restart with configurable delays and player warnings
 - **World backups** - Zip, rsync, or rdiff-backup with automatic rotation
 - **RAM disk support** - Load worlds into RAM for reduced lag
-- **Jar management** - Organize jars into groups, link servers to specific versions
+- **Jar management** - Centralize jars and share across multiple server instances
 - **Fabric mod loader** - Native support for Fabric with version compatibility checks
 - **Player management** - Allowlist, operators, bans (players and IPs)
 - **Log rolling** - Automatic log compression and archival
@@ -135,6 +135,8 @@ msm config
 ## Running Multiple Servers
 
 MSM is designed to run multiple Minecraft server instances simultaneously on a single host. Each MSM "server" is an independent Minecraft instance with its own world, port, and configuration.
+
+It is generally designed for one world per server instance.
 
 ### How It Works
 
