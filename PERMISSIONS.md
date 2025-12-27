@@ -2,6 +2,17 @@
 
 This guide explains how MSM handles permissions and how to set up multi-user access to Minecraft servers.
 
+## Contents
+
+- [How It Works](#how-it-works)
+- [Quick Reference](#quick-reference)
+- [Default Setup (Single User)](#default-setup-single-user)
+- [Multi-User Setup](#multi-user-setup)
+- [Permission Errors](#permission-errors)
+- [Directory Permissions Reference](#directory-permissions-reference)
+- [Unix Permissions Primer](#unix-permissions-primer)
+- [Troubleshooting](#troubleshooting)
+
 ## How It Works
 
 MSM uses Unix user ownership to control who can manage each server:

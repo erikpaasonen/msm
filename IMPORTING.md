@@ -2,6 +2,15 @@
 
 If you have an existing Minecraft world (from single-player or another server), you can import it into MSM.
 
+## Contents
+
+- [From Single-Player](#from-single-player)
+- [From Another Server](#from-another-server)
+- [Custom level-name](#custom-level-name)
+- [Modpacks](#modpacks)
+- [World Folder Structure](#world-folder-structure)
+- [How MSM Handles Worlds](#how-msm-handles-worlds)
+
 ## From Single-Player
 
 Single-player worlds are stored in your Minecraft saves folder:

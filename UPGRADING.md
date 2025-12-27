@@ -2,6 +2,16 @@
 
 The Go rewrite of MSM maintains full compatibility with existing MSM configurations.
 
+## Contents
+
+- [What stays the same](#what-stays-the-same)
+- [What's new](#whats-new)
+- [Migration steps](#migration-steps)
+- [Terminology changes](#terminology-changes)
+- [New commands](#new-commands)
+- [Systemd integration](#systemd-integration)
+- [Troubleshooting migration](#troubleshooting-migration)
+
 ## What stays the same
 
 - Configuration file format (`/etc/msm.conf`)

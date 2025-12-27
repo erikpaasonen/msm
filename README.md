@@ -4,6 +4,28 @@ A command-line tool for running and managing multiple Minecraft server instances
 
 **MSM v0.12.0** is a complete rewrite in Go, replacing the original bash init script with a modern, type-safe CLI.
 
+## Contents
+
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Features](#features)
+- [Running Multiple Servers](#running-multiple-servers)
+- [Importing Existing Worlds](#importing-existing-worlds)
+- [Configuration](#configuration)
+- [Permissions](#permissions)
+- [Common Commands](#common-commands)
+- [RAM Disk Support](#ram-disk-support)
+- [Fabric Mod Loader](#fabric-mod-loader)
+- [Full Command Reference](#full-command-reference)
+- [Shell Completion](#shell-completion)
+- [Upgrading from Bash MSM](#upgrading-from-bash-msm)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+- [Support](#support)
+
 ## Requirements
 
 ### Platform Support
@@ -111,7 +133,7 @@ Optionally enable auto-start on boot:
 sudo make systemd-install
 ```
 
-For multi-user setups where multiple people manage their own servers, see [PERMISSIONS.markdown](PERMISSIONS.markdown)
+For multi-user setups where multiple people manage their own servers, see [PERMISSIONS.md](PERMISSIONS.md)
 
 ### Verify Installation
 
@@ -274,7 +296,7 @@ bob$ msm stop my-server
 Error: permission denied: server "my-server" is owned by user "alice"
 ```
 
-See [PERMISSIONS.markdown](PERMISSIONS.markdown) for the full guide including multi-user setup.
+See [PERMISSIONS.md](PERMISSIONS.md) for the full guide including multi-user setup.
 
 ## Common Commands
 
@@ -415,7 +437,7 @@ FABRIC_INSTALLER_VERSION="1.1.0"     # Optional: pin specific installer version
 
 ## Full Command Reference
 
-See [COMMANDS.markdown](COMMANDS.markdown) for the complete command reference, including all flags, environment variables, and exit codes.
+See [COMMANDS.md](COMMANDS.md) for the complete command reference, including all flags, environment variables, and exit codes.
 
 ## Shell Completion
 
@@ -474,7 +496,7 @@ make build-all
 
 ## License
 
-MSM is released under the [GPLv3 license](LICENSE.markdown).
+MSM is released under the [GPLv3 license](LICENSE.md).
 
 ## Acknowledgements
 
@@ -483,4 +505,4 @@ This project grew out of [Ahtenus' Minecraft Init Script](https://github.com/Aht
 ## Support
 
 - [Submit an issue](https://github.com/msmhq/msm/issues) for bugs or feature requests
-- See the [changelog](CHANGELOG.markdown) for version history
+- See the [changelog](CHANGELOG.md) for version history

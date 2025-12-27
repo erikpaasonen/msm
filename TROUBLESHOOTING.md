@@ -2,6 +2,17 @@
 
 Common issues and solutions for MSM.
 
+## Contents
+
+- [Permission denied errors](#permission-denied-errors)
+- [Server stops immediately after starting](#server-stops-immediately-after-starting)
+- [World not loading (new random world generated)](#world-not-loading-new-random-world-generated)
+- [Status shows different results for different users](#status-shows-different-results-for-different-users)
+- [Fabric-related issues](#fabric-related-issues)
+- [RAM disk issues](#ram-disk-issues)
+- [Screen session issues](#screen-session-issues)
+- [Getting more information](#getting-more-information)
+
 ## Permission denied errors
 
 If you see "permission denied" errors when running MSM commands:
@@ -64,7 +75,7 @@ Ensure the jar version matches your world. Older worlds may need older Minecraft
 
 ## World not loading (new random world generated)
 
-MSM stores worlds in `worldstorage/` and creates symlinks on start. This architecture is required for [RAM disk support](README.markdown#ram-disk-support)—see [IMPORTING.md](IMPORTING.md#how-msm-handles-worlds) for details.
+MSM stores worlds in `worldstorage/` and creates symlinks on start. This architecture is required for [RAM disk support](README.md#ram-disk-support)—see [IMPORTING.md](IMPORTING.md#how-msm-handles-worlds) for details.
 
 ### Checklist
 

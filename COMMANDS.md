@@ -2,6 +2,19 @@
 
 Complete reference for all MSM commands.
 
+## Contents
+
+- [Global Commands](#global-commands)
+- [Server Management](#server-management)
+- [World Management](#world-management)
+- [Backups](#backups)
+- [Player Management](#player-management)
+- [Jar Group Management](#jar-group-management)
+- [Fabric Mod Loader](#fabric-mod-loader)
+- [Global Flags](#global-flags)
+- [Environment Variables](#environment-variables)
+- [Exit Codes](#exit-codes)
+
 ## Global Commands
 
 Commands that operate on all servers or the MSM system itself.
@@ -74,6 +87,14 @@ Commands that operate on all servers or the MSM system itself.
 
 ## Player Management
 
+### Operators
+
+| Command | Description |
+|---------|-------------|
+| `msm op add <server> <player>` | Make player an operator |
+| `msm op remove <server> <player>` | Remove operator status |
+| `msm op list <server>` | List all operators |
+
 ### Allowlist (Whitelist)
 
 | Command | Description |
@@ -82,14 +103,6 @@ Commands that operate on all servers or the MSM system itself.
 | `msm allowlist add <server> <player>...` | Add player(s) to allowlist |
 | `msm allowlist remove <server> <player>...` | Remove player(s) from allowlist |
 | `msm allowlist list <server>` | List all allowlisted players |
-
-### Operators
-
-| Command | Description |
-|---------|-------------|
-| `msm op add <server> <player>` | Make player an operator |
-| `msm op remove <server> <player>` | Remove operator status |
-| `msm op list <server>` | List all operators |
 
 ### Blocklist (Bans)
 
