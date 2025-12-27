@@ -552,6 +552,7 @@ view-distance=%d
 max-players=%d
 difficulty=%s
 gamemode=%s
+force-gamemode=true
 motd=%s
 level-name=world
 enable-command-block=false
@@ -589,12 +590,13 @@ func mergeServerProperties(serverPath string, port int, cfg *config.Config) ([]s
 	}
 
 	defaults := map[string]string{
-		"server-port":   strconv.Itoa(port),
-		"view-distance": strconv.Itoa(cfg.DefaultRenderDistance),
-		"max-players":   strconv.Itoa(cfg.DefaultMaxPlayers),
-		"difficulty":    cfg.DefaultDifficulty,
-		"gamemode":      cfg.DefaultGamemode,
-		"level-name":    "world",
+		"server-port":    strconv.Itoa(port),
+		"view-distance":  strconv.Itoa(cfg.DefaultRenderDistance),
+		"max-players":    strconv.Itoa(cfg.DefaultMaxPlayers),
+		"difficulty":     cfg.DefaultDifficulty,
+		"gamemode":       cfg.DefaultGamemode,
+		"force-gamemode": "true",
+		"level-name":     "world",
 	}
 
 	var added []string

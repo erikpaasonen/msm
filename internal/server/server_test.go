@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -461,6 +462,43 @@ RAM="512"
 				Expect(err).NotTo(HaveOccurred())
 				Expect(info.Mode() & os.ModeSymlink).To(BeZero())
 			})
+		})
+	})
+
+	Describe("Create", func() {
+		It("generates server.properties with force-gamemode enabled", func() {
+			s, err := server.Create("testserver", globalCfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			propsPath := filepath.Join(s.Path, "server.properties")
+			content, err := os.ReadFile(propsPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(string(content)).To(ContainSubstring("force-gamemode=true"))
+		})
+	})
+
+	Describe("Init", func() {
+		It("adds force-gamemode to existing server.properties if missing", func() {
+			serverPath := filepath.Join(tempDir, "existingserver")
+			Expect(os.MkdirAll(serverPath, 0755)).To(Succeed())
+
+			serverConf := fmt.Sprintf(`USERNAME="%s"`, os.Getenv("USER"))
+			Expect(os.WriteFile(filepath.Join(serverPath, "server.conf"), []byte(serverConf), 0644)).To(Succeed())
+
+			propsContent := `server-port=25565
+gamemode=survival
+`
+			propsPath := filepath.Join(serverPath, "server.properties")
+			Expect(os.WriteFile(propsPath, []byte(propsContent), 0644)).To(Succeed())
+
+			created, err := server.Init("existingserver", globalCfg)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(created).To(ContainElement(ContainSubstring("force-gamemode")))
+
+			content, err := os.ReadFile(propsPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(content)).To(ContainSubstring("force-gamemode=true"))
 		})
 	})
 })
