@@ -13,7 +13,7 @@ import (
 
 const (
 	SyncScreenName   = "msm-sync"
-	SyncIntervalSecs = 600
+	SyncIntervalSecs = 120
 )
 
 var syncSession = screen.New(SyncScreenName)

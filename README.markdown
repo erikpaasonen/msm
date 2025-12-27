@@ -341,9 +341,9 @@ msm worlds ram off survival world
 msm worlds todisk survival
 ```
 
-A background sync daemon automatically syncs RAM to disk every 10 minutes while servers are running. Additionally, `msm stop` automatically syncs all RAM worlds to disk before shutting down, ensuring data safety during planned reboots and system updates.
+A background sync daemon automatically syncs RAM to disk every 2 minutes while servers are running. Additionally, `msm stop` automatically syncs all RAM worlds to disk before shutting down, ensuring data safety during planned reboots and system updates.
 
-**Warning:** In case of unexpected shutdown (power loss, kernel panic), you may lose up to 10 minutes of changes.
+**Warning:** In case of unexpected shutdown (power loss, kernel panic), you may lose up to 2 minutes of changes.
 
 ### Why worldstorage/?
 
