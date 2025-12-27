@@ -208,6 +208,54 @@ func (s *Server) SetupRAMWorlds() error {
 	return nil
 }
 
+func (s *Server) SyncRAMWorldsToDisk() error {
+	if !s.GlobalCfg.RamdiskStorageEnabled {
+		return nil
+	}
+
+	worlds, err := world.DiscoverAll(
+		s.Path,
+		s.Name,
+		s.GlobalCfg,
+		s.Config.WorldStoragePath,
+		s.Config.WorldStorageInactivePath,
+	)
+	if err != nil {
+		return err
+	}
+
+	hasRAMWorlds := false
+	for _, w := range worlds {
+		if w.InRAM && w.Active {
+			hasRAMWorlds = true
+			break
+		}
+	}
+
+	if !hasRAMWorlds {
+		return nil
+	}
+
+	logging.Info("syncing RAM worlds to disk before stop", "server", s.Name)
+
+	if s.IsRunning() {
+		s.SaveOff()
+		s.SaveAll()
+		time.Sleep(1 * time.Second)
+	}
+
+	for _, w := range worlds {
+		if w.InRAM && w.Active {
+			logging.Debug("syncing world to disk", "world", w.Name, "server", s.Name)
+			if err := w.ToDisk(s.Config.Username); err != nil {
+				logging.Warn("failed to sync world", "world", w.Name, "error", err)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *Server) Stop(immediate bool) error {
 	if err := s.CheckPermission(); err != nil {
 		return err
@@ -215,6 +263,10 @@ func (s *Server) Stop(immediate bool) error {
 
 	if !s.IsRunning() {
 		return nil
+	}
+
+	if err := s.SyncRAMWorldsToDisk(); err != nil {
+		logging.Warn("failed to sync RAM worlds before stop", "server", s.Name, "error", err)
 	}
 
 	if !immediate {
