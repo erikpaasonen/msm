@@ -45,18 +45,14 @@ var worldsListCmd = &cobra.Command{
 		}
 
 		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(tw, "NAME\tSERVER\tSTATUS\tLOCATION\tVERSION")
+		fmt.Fprintln(tw, "NAME\tSERVER\tLOCATION\tVERSION")
 
 		for _, w := range worlds {
-			status := "inactive"
-			if w.Active {
-				status = "active"
-			}
 			location := "disk"
 			if w.InRAM {
 				location = "RAM"
 			}
-			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", w.Name, serverName, status, location, mcVersion)
+			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", w.Name, serverName, location, mcVersion)
 		}
 		tw.Flush()
 		return nil

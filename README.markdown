@@ -179,10 +179,10 @@ msm worlds list survival
 ```
 
 ```
-NAME            SERVER     STATUS  LOCATION  VERSION
-world           survival   active  RAM       1.21.4
-world_nether    survival   active  disk      1.21.4
-world_the_end   survival   active  disk      1.21.4
+NAME            SERVER    LOCATION  VERSION
+world           survival  RAM       1.21.4
+world_nether    survival  disk      1.21.4
+world_the_end   survival  disk      1.21.4
 ```
 
 Players connect to different servers using their port: `yourhost:25565`, `yourhost:25566`, etc.
