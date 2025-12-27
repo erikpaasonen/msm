@@ -40,7 +40,7 @@ while true; do
 done
 `, SyncIntervalSecs, msmBinary)
 
-	logging.Info("starting sync daemon", "interval", fmt.Sprintf("%ds", SyncIntervalSecs))
+	fmt.Fprintf(os.Stderr, "Starting background RAM-to-disk sync (every %d seconds)...\n", SyncIntervalSecs)
 
 	cmd := exec.Command("screen", "-dmS", SyncScreenName, "bash", "-c", syncScript)
 	cmd.Dir = cfg.ServerStoragePath
@@ -52,7 +52,7 @@ func StopSyncDaemon() error {
 		return nil
 	}
 
-	logging.Info("stopping sync daemon")
+	fmt.Fprintf(os.Stderr, "Stopping background RAM-to-disk sync...\n")
 	return syncSession.Kill()
 }
 
