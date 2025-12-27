@@ -59,12 +59,12 @@ var worldsListCmd = &cobra.Command{
 	},
 }
 
-var worldsOnCmd = &cobra.Command{
-	Use:   "on <server> <world>",
-	Short: "Activate a world",
-	Args:  cobra.ExactArgs(2),
+var worldsSetCmd = &cobra.Command{
+	Use:   "set <server> <world> <on|off>",
+	Short: "Activate or deactivate a world",
+	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName, worldName := args[0], args[1]
+		serverName, worldName, state := args[0], args[1], args[2]
 
 		s, err := server.Get(serverName, cfg)
 		if err != nil {
@@ -76,37 +76,20 @@ var worldsOnCmd = &cobra.Command{
 			return err
 		}
 
-		if err := w.Activate(s.Config.WorldStoragePath); err != nil {
-			return err
+		switch state {
+		case "on":
+			if err := w.Activate(s.Config.WorldStoragePath); err != nil {
+				return err
+			}
+			fmt.Printf("Activated world %q for server %q\n", worldName, serverName)
+		case "off":
+			if err := w.Deactivate(s.Config.WorldStorageInactivePath); err != nil {
+				return err
+			}
+			fmt.Printf("Deactivated world %q for server %q\n", worldName, serverName)
+		default:
+			return fmt.Errorf("invalid state %q: must be 'on' or 'off'", state)
 		}
-
-		fmt.Printf("Activated world %q for server %q\n", worldName, serverName)
-		return nil
-	},
-}
-
-var worldsOffCmd = &cobra.Command{
-	Use:   "off <server> <world>",
-	Short: "Deactivate a world",
-	Args:  cobra.ExactArgs(2),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName, worldName := args[0], args[1]
-
-		s, err := server.Get(serverName, cfg)
-		if err != nil {
-			return err
-		}
-
-		w, err := world.Get(s.Path, s.Name, worldName, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath, cfg)
-		if err != nil {
-			return err
-		}
-
-		if err := w.Deactivate(s.Config.WorldStorageInactivePath); err != nil {
-			return err
-		}
-
-		fmt.Printf("Deactivated world %q for server %q\n", worldName, serverName)
 		return nil
 	},
 }
@@ -117,7 +100,7 @@ var worldsRAMCmd = &cobra.Command{
 	Long: `Show or manage RAM disk state for a world.
 
 Without a subcommand, shows the current RAM status.
-Use 'ram on' or 'ram off' to change the state.`,
+Use 'ram set <server> <world> on|off' to change the state.`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		serverName, worldName := args[0], args[1]
@@ -142,12 +125,12 @@ Use 'ram on' or 'ram off' to change the state.`,
 	},
 }
 
-var worldsRAMOnCmd = &cobra.Command{
-	Use:   "on <server> <world>",
-	Short: "Enable RAM disk for a world",
-	Args:  cobra.ExactArgs(2),
+var worldsRAMSetCmd = &cobra.Command{
+	Use:   "set <server> <world> <on|off>",
+	Short: "Enable or disable RAM disk for a world",
+	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName, worldName := args[0], args[1]
+		serverName, worldName, state := args[0], args[1], args[2]
 
 		s, err := server.Get(serverName, cfg)
 		if err != nil {
@@ -159,28 +142,21 @@ var worldsRAMOnCmd = &cobra.Command{
 			return err
 		}
 
-		return w.EnableRAM(s.Config.Username)
-	},
-}
-
-var worldsRAMOffCmd = &cobra.Command{
-	Use:   "off <server> <world>",
-	Short: "Disable RAM disk for a world",
-	Args:  cobra.ExactArgs(2),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName, worldName := args[0], args[1]
-
-		s, err := server.Get(serverName, cfg)
-		if err != nil {
-			return err
+		switch state {
+		case "on":
+			if err := w.EnableRAM(s.Config.Username); err != nil {
+				return err
+			}
+			fmt.Printf("Enabled RAM disk for world %q\n", worldName)
+		case "off":
+			if err := w.DisableRAM(s.Config.Username); err != nil {
+				return err
+			}
+			fmt.Printf("Disabled RAM disk for world %q\n", worldName)
+		default:
+			return fmt.Errorf("invalid state %q: must be 'on' or 'off'", state)
 		}
-
-		w, err := world.Get(s.Path, s.Name, worldName, s.Config.WorldStoragePath, s.Config.WorldStorageInactivePath, cfg)
-		if err != nil {
-			return err
-		}
-
-		return w.DisableRAM(s.Config.Username)
+		return nil
 	},
 }
 
@@ -361,12 +337,10 @@ func init() {
 	worldsToDiskCmd.Flags().Bool("all", false, "Sync all running servers")
 	worldsBackupCmd.Flags().Bool("all", false, "Backup all servers")
 
-	worldsRAMCmd.AddCommand(worldsRAMOnCmd)
-	worldsRAMCmd.AddCommand(worldsRAMOffCmd)
+	worldsRAMCmd.AddCommand(worldsRAMSetCmd)
 
 	worldsCmd.AddCommand(worldsListCmd)
-	worldsCmd.AddCommand(worldsOnCmd)
-	worldsCmd.AddCommand(worldsOffCmd)
+	worldsCmd.AddCommand(worldsSetCmd)
 	worldsCmd.AddCommand(worldsRAMCmd)
 	worldsCmd.AddCommand(worldsToDiskCmd)
 	worldsCmd.AddCommand(worldsBackupCmd)

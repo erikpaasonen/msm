@@ -56,11 +56,9 @@ Commands that operate on all servers or the MSM system itself.
 | Command | Description |
 |---------|-------------|
 | `msm worlds list <server>` | List all worlds for a server |
-| `msm worlds on <server> <world>` | Activate a world |
-| `msm worlds off <server> <world>` | Deactivate a world |
+| `msm worlds set <server> <world> <on\|off>` | Activate or deactivate a world |
 | `msm worlds ram <server> <world>` | Show RAM disk status for a world |
-| `msm worlds ram on <server> <world>` | Enable RAM disk for a world |
-| `msm worlds ram off <server> <world>` | Disable RAM disk for a world |
+| `msm worlds ram set <server> <world> <on\|off>` | Enable or disable RAM disk for a world |
 | `msm worlds todisk [server]` | Sync RAM worlds to disk |
 | `msm worlds todisk --all` | Sync all RAM worlds (all servers) |
 | `msm worlds backup [server]` | Backup all worlds for a server |
@@ -80,8 +78,7 @@ Commands that operate on all servers or the MSM system itself.
 
 | Command | Description |
 |---------|-------------|
-| `msm allowlist on <server>` | Enable allowlist enforcement |
-| `msm allowlist off <server>` | Disable allowlist enforcement |
+| `msm allowlist set <server> <on\|off>` | Enable or disable allowlist enforcement |
 | `msm allowlist add <server> <player>...` | Add player(s) to allowlist |
 | `msm allowlist remove <server> <player>...` | Remove player(s) from allowlist |
 | `msm allowlist list <server>` | List all allowlisted players |

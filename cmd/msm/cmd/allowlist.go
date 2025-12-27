@@ -16,12 +16,12 @@ var allowlistCmd = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 }
 
-var allowlistOnCmd = &cobra.Command{
-	Use:   "on <server>",
-	Short: "Enable the allowlist",
-	Args:  cobra.ExactArgs(1),
+var allowlistSetCmd = &cobra.Command{
+	Use:   "set <server> <on|off>",
+	Short: "Enable or disable the allowlist (whitelist)",
+	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName := args[0]
+		serverName, state := args[0], args[1]
 
 		s, err := server.Get(serverName, cfg)
 		if err != nil {
@@ -32,36 +32,20 @@ var allowlistOnCmd = &cobra.Command{
 			return fmt.Errorf("server %q is not running", serverName)
 		}
 
-		if err := s.SendCommand("whitelist on"); err != nil {
-			return err
+		switch state {
+		case "on":
+			if err := s.SendCommand("whitelist on"); err != nil {
+				return err
+			}
+			fmt.Printf("Allowlist enabled for server %q\n", serverName)
+		case "off":
+			if err := s.SendCommand("whitelist off"); err != nil {
+				return err
+			}
+			fmt.Printf("Allowlist disabled for server %q\n", serverName)
+		default:
+			return fmt.Errorf("invalid state %q: must be 'on' or 'off'", state)
 		}
-
-		fmt.Printf("Allowlist enabled for server %q\n", serverName)
-		return nil
-	},
-}
-
-var allowlistOffCmd = &cobra.Command{
-	Use:   "off <server>",
-	Short: "Disable the allowlist",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		serverName := args[0]
-
-		s, err := server.Get(serverName, cfg)
-		if err != nil {
-			return err
-		}
-
-		if !s.IsRunning() {
-			return fmt.Errorf("server %q is not running", serverName)
-		}
-
-		if err := s.SendCommand("whitelist off"); err != nil {
-			return err
-		}
-
-		fmt.Printf("Allowlist disabled for server %q\n", serverName)
 		return nil
 	},
 }
@@ -252,8 +236,7 @@ var opListCmd = &cobra.Command{
 }
 
 func init() {
-	allowlistCmd.AddCommand(allowlistOnCmd)
-	allowlistCmd.AddCommand(allowlistOffCmd)
+	allowlistCmd.AddCommand(allowlistSetCmd)
 	allowlistCmd.AddCommand(allowlistAddCmd)
 	allowlistCmd.AddCommand(allowlistRemoveCmd)
 	allowlistCmd.AddCommand(allowlistListCmd)
