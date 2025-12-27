@@ -177,10 +177,21 @@ func serverAction(action string) func(*cobra.Command, []string) error {
 
 		case "connected":
 			if !s.IsRunning() {
-				fmt.Printf("Server %q is not running\n", name)
+				fmt.Printf("Server %q is not running. No players connected.\n", name)
 				return nil
 			}
-			fmt.Printf("Server %q is running (use 'msm %s console' to connect)\n", name, name)
+			players, err := s.ConnectedPlayers()
+			if err != nil {
+				return fmt.Errorf("failed to get connected players: %w", err)
+			}
+			if len(players) == 0 {
+				fmt.Println("No players connected.")
+			} else {
+				fmt.Printf("Connected players (%d):\n", len(players))
+				for _, p := range players {
+					fmt.Printf("  %s\n", p)
+				}
+			}
 		}
 
 		return nil
@@ -198,7 +209,7 @@ func addServerActionCommands() {
 		{"restart", "Restart the server", true},
 		{"status", "Show server status", false},
 		{"console", "Attach to server console", false},
-		{"connected", "Check if server is running", false},
+		{"connected", "List connected players", false},
 	}
 
 	for _, a := range actions {

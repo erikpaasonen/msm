@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -386,6 +387,61 @@ func (s *Server) SaveOff() error {
 
 func (s *Server) SaveOn() error {
 	return s.SendCommand("save-on")
+}
+
+func (s *Server) ConnectedPlayers() ([]string, error) {
+	logPath := s.LogPath()
+
+	initialSize, err := getFileSize(logPath)
+	if err != nil {
+		initialSize = 0
+	}
+
+	if err := s.SendCommand("list"); err != nil {
+		return nil, err
+	}
+
+	time.Sleep(200 * time.Millisecond)
+
+	file, err := os.Open(logPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file: %w", err)
+	}
+	defer file.Close()
+
+	if initialSize > 0 {
+		file.Seek(initialSize, 0)
+	}
+
+	var players []string
+	listPattern := regexp.MustCompile(`players online: (.*)$`)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if matches := listPattern.FindStringSubmatch(line); len(matches) > 1 {
+			playerList := strings.TrimSpace(matches[1])
+			if playerList != "" {
+				for _, p := range strings.Split(playerList, ", ") {
+					p = strings.TrimSpace(p)
+					if p != "" {
+						players = append(players, p)
+					}
+				}
+			}
+			break
+		}
+	}
+
+	return players, scanner.Err()
+}
+
+func getFileSize(path string) (int64, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0, err
+	}
+	return info.Size(), nil
 }
 
 func Create(name string, cfg *config.Config) (*Server, error) {

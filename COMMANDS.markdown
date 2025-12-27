@@ -49,6 +49,7 @@ Commands that operate on all servers or the MSM system itself.
 | `msm cmd <server> <command>` | Send command to server console |
 | `msm say <server> <message>` | Broadcast message to all players |
 | `msm kick <server> <player> [reason]` | Kick a player |
+| `msm connected <server>` | List connected players |
 
 ## World Management
 
@@ -89,8 +90,9 @@ Commands that operate on all servers or the MSM system itself.
 
 | Command | Description |
 |---------|-------------|
-| `msm op <server> <player>` | Make player an operator |
-| `msm deop <server> <player>` | Remove operator status |
+| `msm op add <server> <player>` | Make player an operator |
+| `msm op remove <server> <player>` | Remove operator status |
+| `msm op list <server>` | List all operators |
 
 ### Blocklist (Bans)
 

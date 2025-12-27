@@ -162,7 +162,12 @@ var allowlistListCmd = &cobra.Command{
 }
 
 var opCmd = &cobra.Command{
-	Use:   "op <server> <player>",
+	Use:   "op",
+	Short: "Operator management commands",
+}
+
+var opAddCmd = &cobra.Command{
+	Use:   "add <server> <player>",
 	Short: "Make a player an operator",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -188,8 +193,8 @@ var opCmd = &cobra.Command{
 	},
 }
 
-var deopCmd = &cobra.Command{
-	Use:   "deop <server> <player>",
+var opRemoveCmd = &cobra.Command{
+	Use:   "remove <server> <player>",
 	Short: "Remove operator status from a player",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -215,6 +220,37 @@ var deopCmd = &cobra.Command{
 	},
 }
 
+var opListCmd = &cobra.Command{
+	Use:   "list <server>",
+	Short: "List all operators for a server",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		serverName := args[0]
+
+		s, err := server.Get(serverName, cfg)
+		if err != nil {
+			return err
+		}
+
+		entries, err := player.LoadOps(s.OpsPath())
+		if err != nil {
+			return err
+		}
+
+		if len(entries) == 0 {
+			fmt.Println("No operators.")
+			return nil
+		}
+
+		fmt.Printf("Operators for server %q:\n", serverName)
+		for _, e := range entries {
+			fmt.Printf("  %s (level %d)\n", e.Name, e.Level)
+		}
+
+		return nil
+	},
+}
+
 func init() {
 	allowlistCmd.AddCommand(allowlistOnCmd)
 	allowlistCmd.AddCommand(allowlistOffCmd)
@@ -222,7 +258,10 @@ func init() {
 	allowlistCmd.AddCommand(allowlistRemoveCmd)
 	allowlistCmd.AddCommand(allowlistListCmd)
 
+	opCmd.AddCommand(opAddCmd)
+	opCmd.AddCommand(opRemoveCmd)
+	opCmd.AddCommand(opListCmd)
+
 	rootCmd.AddCommand(allowlistCmd)
 	rootCmd.AddCommand(opCmd)
-	rootCmd.AddCommand(deopCmd)
 }
