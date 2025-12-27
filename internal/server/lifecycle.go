@@ -31,6 +31,8 @@ func (s *Server) Start() error {
 		return fmt.Errorf("server %q is already running", s.Name)
 	}
 
+	fmt.Fprintf(os.Stderr, "Starting server %q...\n", s.Name)
+
 	var jarPath string
 	var jarForInvocation string
 
@@ -265,6 +267,8 @@ func (s *Server) Stop(immediate bool) error {
 	if !s.IsRunning() {
 		return nil
 	}
+
+	fmt.Fprintf(os.Stderr, "Stopping server %q...\n", s.Name)
 
 	if err := s.SyncRAMWorldsToDisk(); err != nil {
 		logging.Warn("failed to sync RAM worlds before stop", "server", s.Name, "error", err)
